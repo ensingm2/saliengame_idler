@@ -8,6 +8,7 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 * Fast switching between zones.
 * Will automatically send the maximum score allowed (to my knowledge) for each zone difficulty.
 * Automatically restarts runs after completion.
+* Disables game animations to minimize game resource usage.
 
 ### How to Run
 **Currently tested on Chrome, Firefox and Safari. The following guide is for Chrome only**
