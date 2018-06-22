@@ -40,10 +40,9 @@ class BotGUI {
 
 		$J('#salien_game_placeholder').append( $statusWindow )
 	}
-
-	updateStatus(status, log_to_console) {
-		if(log_to_console)
-			console.log(status);
+	
+	updateStatus(status) {
+		console.log(status);
 		document.getElementById('salienbot_status').innerText = status;
 	}
 
@@ -110,7 +109,7 @@ var INJECT_start_round = function(zone, access_token) {
 
 // Update time remaining, and wait for the round to complete.
 var INJECT_wait_for_end = function(time_remaining) {
-    gui.updateStatus("Time remaining in round: " + time_remaining + "s", false);
+	gui.updateStatus("Time remaining in round: " + time_remaining + "s");
 
 	// Wait
 	var wait_time;
@@ -179,7 +178,7 @@ var INJECT_leave_round = function() {
 	if(current_game_id === undefined)
 		return;
 
-	gui.updateStatus("Leaving game: " + current_game_id, true);
+	console.log("Leaving game: " + current_game_id);
 
 	// Cancel timeouts
 	clearTimeout(current_timeout);
@@ -218,8 +217,7 @@ var INJECT_update_grid = function() {
 	if(current_planet_id === undefined)
 		return;
 
-
-	gui.updateStatus('Updating grid', true);
+	gui.updateStatus('Updating grid');
 
 	// GET to the endpoint
 	$J.ajax({
@@ -243,7 +241,7 @@ function GetBestZone() {
 	var bestZoneIdx;
 	var highestDifficulty = -1;
 
-	gui.updateStatus('Getting best zone', true);
+	gui.updateStatus('Getting best zone');
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
