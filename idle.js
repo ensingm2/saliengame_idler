@@ -67,7 +67,13 @@ class BotGUI {
 		document.getElementById('salienbot_level').innerText = level;
     }
     
-    updateEstimatedTime(timeTxt) {
+    updateEstimatedTime(secondsLeft) {
+        let date = new Date(null);
+        date.setSeconds(secondsLeft);
+        var result = date.toISOString().substr(11, 8);
+    
+        var timeTxt = result.replace(/(\d{2}):(\d{2}):(\d{2})/gm, '$1h $2m $3s');
+
         document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
     }
 };
@@ -77,7 +83,6 @@ var gui = new BotGUI({
     exp: gPlayerInfo.score
 });
 
-
 function calculateTimeToNextLevel() {
     const missingExp = gPlayerInfo.next_level_score - gPlayerInfo.score;
     const nextScoreAmount = max_scores[INJECT_get_difficulty(target_zone)];
@@ -85,11 +90,7 @@ function calculateTimeToNextLevel() {
 
     const secondsLeft = missingExp / nextScoreAmount * roundTime;
 
-    let date = new Date(null);
-    date.setSeconds(secondsLeft);
-    var result = date.toISOString().substr(11, 8);
-
-    return result.replace(/(\d{2}):(\d{2}):(\d{2})/gm, '$1h $2m $3s');
+    return secondsLeft;
 }
 
 // Grab the user's access token
