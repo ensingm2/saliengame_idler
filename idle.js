@@ -45,8 +45,9 @@ class BotGUI {
 		$J('#salien_game_placeholder').append( $statusWindow )
 	}
 	
-	updateStatus(status) {
-        console.log(status);
+	updateStatus(status, log_to_console) {
+		if(log_to_console)
+			console.log(status);
 		document.getElementById('salienbot_status').innerText = status;
 	}
 	
@@ -113,7 +114,7 @@ var INJECT_start_round = function(zone, access_token) {
 
 // Update time remaining, and wait for the round to complete.
 var INJECT_wait_for_end = function(time_remaining) {
-    gui.updateStatus("Time remaining in round: " + time_remaining + "s");
+    gui.updateStatus("Time remaining in round: " + time_remaining + "s", false);
 
 	// Wait
 	var wait_time;
@@ -182,7 +183,7 @@ var INJECT_leave_round = function() {
 	if(current_game_id === undefined)
 		return;
 
-	console.log("Leaving game: " + current_game_id);
+	gui.updateStatus("Leaving game: " + current_game_id, true);
 
 	// Cancel timeouts
 	clearTimeout(current_timeout);
@@ -222,7 +223,7 @@ var INJECT_update_grid = function() {
         return;
         
 
-    gui.updateStatus('Updating grid');
+    gui.updateStatus('Updating grid', true);
 
 	// GET to the endpoint
 	$J.ajax({
@@ -246,7 +247,7 @@ function GetBestZone() {
 	var bestZoneIdx;
     var highestDifficulty = -1;
     
-    gui.updateStatus('Getting best zone');
+    gui.updateStatus('Getting best zone', true);
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
