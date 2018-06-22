@@ -128,7 +128,7 @@ var INJECT_leave_round = function() {
 		url: "https://community.steam-api.com/IMiniGameService/LeaveGame/v0001/",
 		data: { access_token: access_token, gameid: current_game_id },
 		success: function(data) {}
-	},);
+	});
 
 	// Clear the current game ID var
 	current_game_id = undefined;
