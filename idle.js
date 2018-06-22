@@ -95,6 +95,7 @@ var INJECT_end_round = function() {
 			}
 			else {
 				console.log("Successfully finished the round and got expected data back:");
+				console.log("Level: ", data.response.new_level, "\nEXP:   ", data.response.new_score);
 				console.log(data);
 
 				// Update the player info in the UI
