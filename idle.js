@@ -1,5 +1,3 @@
-CEnemyManager.prototype.BuildEnemy = function(){};
-
 // This is the zone you want to attack.
 var target_zone = -1;
 
