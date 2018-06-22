@@ -1,7 +1,4 @@
-// Disable the game animations to minimize browser CPU usage
-requestAnimationFrame = function(){}
-
-// This is the zone you want to attack.
+// This is the zone you want to attack (Optional, otherwise picks one for you).
 var target_zone = -1;
 
 // Variables. Don't change these unless you know what you're doing.
@@ -20,18 +17,18 @@ var current_planet_id = undefined;
 
 class BotGUI {
 	constructor(state) {
-        console.log('GUI Has been created');
-        
-        this.state = state;
+		console.log('GUI Has been created');
+
+		this.state = state;
 		
 		this.createStatusWindow();
 	}
-	
+
 	createStatusWindow() {
 		if(document.getElementById('salienbot_gui')) {
 			return false;
 		}
-		
+
 		var $statusWindow = $J([
 			'<div id="salienbot_gui" style="background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; width: 300px; margin: 15 15; transform: translate(0, 0px);">',
 				'<h1><a href="https://github.com/ensingm2/saliengame_idler/">Salien Game Idler</a></h1>',
@@ -41,16 +38,15 @@ class BotGUI {
 			'</div>'
 		].join(''))
 
-
 		$J('#salien_game_placeholder').append( $statusWindow )
 	}
-	
+
 	updateStatus(status, log_to_console) {
 		if(log_to_console)
 			console.log(status);
 		document.getElementById('salienbot_status').innerText = status;
 	}
-	
+
 	updateExp(exp) {
 		document.getElementById('salienbot_exp').innerText = exp;
 	}
@@ -61,8 +57,8 @@ class BotGUI {
 };
 
 var gui = new BotGUI({
-    level: gPlayerInfo.level,
-    exp: gPlayerInfo.score
+	level: gPlayerInfo.level,
+	exp: gPlayerInfo.score
 });
 
 // Grab the user's access token
@@ -159,10 +155,10 @@ var INJECT_end_round = function() {
 			else {
 				console.log("Successfully finished the round and got expected data back:");
 				console.log("Level: ", data.response.new_level, "\nEXP:   ", data.response.new_score);
-                console.log(data);
-                
-                gui.updateLevel(data.response.new_level);
-                gui.updateExp(data.response.new_score);
+				console.log(data);
+
+				gui.updateLevel(data.response.new_level);
+				gui.updateExp(data.response.new_score);
 
 				// Update the player info in the UI
 				INJECT_update_player_info();
@@ -220,10 +216,10 @@ var INJECT_update_player_info = function() {
 // Update the zones of the grid (map) on the current planet
 var INJECT_update_grid = function() {
 	if(current_planet_id === undefined)
-        return;
-        
+		return;
 
-    gui.updateStatus('Updating grid', true);
+
+	gui.updateStatus('Updating grid', true);
 
 	// GET to the endpoint
 	$J.ajax({
@@ -245,9 +241,9 @@ var INJECT_update_grid = function() {
 // Get the best zone available
 function GetBestZone() {
 	var bestZoneIdx;
-    var highestDifficulty = -1;
-    
-    gui.updateStatus('Getting best zone', true);
+	var highestDifficulty = -1;
+
+	gui.updateStatus('Getting best zone', true);
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
@@ -307,6 +303,9 @@ if (auto_first_join == true) {
 		INJECT_start_round(target_zone, access_token);
 	}
 }
+
+// Disable the game animations to minimize browser CPU usage
+requestAnimationFrame = function(){}
 
 // Overwrite join function so clicking on a grid square will run our code instead
 gServer.JoinZone = function (zone_id, callback, error_callback) {
