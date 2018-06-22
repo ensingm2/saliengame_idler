@@ -32,12 +32,11 @@ class BotGUI {
 		var $statusWindow = $J([
 			'<div id="salienbot_gui" style="background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; margin: 15px; width: 300px; transform: translate(0, 0);">',
 				'<h1><a href="https://github.com/ensingm2/saliengame_idler/">Salien Game Idler</a></h1>',
-                '<p>Status: <span id="salienbot_status"></span></p>', // Running or stopped
+                '<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
+                `<p>Target Zone: <span id="salienbot_zone">None</span></p>`,
                 '<p>Task: <span id="salienbot_task"></span></p>', // Current task
-				'<p>Level: <span id="salienbot_level">' + this.state.level + '</span></p>',
-                '<p>EXP: <span id="salienbot_exp">' + this.state.exp + '</span></p>',
+				'<p>Level: <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; EXP: <span id="salienbot_exp">' + this.state.exp + '</span></p>',
                 '<p>Est. TimeToLVL: <span id="salienbot_esttimlvl"></span></p>',
-                `<p>Planet: <span id="salienbot_planet">${window.gGame.m_State.m_PlanetData.state.name}</span></p>`,
 			'</div>'
 		].join(''))
 
@@ -45,7 +44,7 @@ class BotGUI {
 	}
 	
 	updateStatus(running) {
-        const statusTxt = running ? '<span style="color: green;">Running</span>' : '<span style="color: red;">Stopped</span>';
+        const statusTxt = running ? '<span style="color: green;">✓ Running</span>' : '<span style="color: red;">✗ Stopped</span>';
 
 		$J('#salienbot_status').html(statusTxt);
     }
@@ -60,7 +59,7 @@ class BotGUI {
 	}
 	
 	updateLevel(level) {
-		document.getElementById('salienbot_level').innerText = level;
+		document.getElementById('salienbot_zone').innerText = zone;
     }
     
     updateEstimatedTime(secondsLeft) {
@@ -71,6 +70,10 @@ class BotGUI {
         var timeTxt = result.replace(/(\d{2}):(\d{2}):(\d{2})/gm, '$1h $2m $3s');
 
         document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
+    }
+
+	updateZone(zone) {
+		document.getElementById('salienbot_level').innerText = zone;
     }
 };
 
@@ -126,6 +129,10 @@ var INJECT_start_round = function(zone, access_token) {
 		success: function(data) {
 			console.log("Round successfully started in zone #" + zone);
 			console.log(data);
+
+			// Update the GUI
+			window.gui.updateZone(zone);
+
 			if (data.response.zone_info !== undefined) {
 				current_game_id = data.response.zone_info.gameid;
 				INJECT_wait_for_end(round_length);
@@ -195,6 +202,9 @@ var INJECT_end_round = function() {
 
 				// Update the player info in the UI
 				INJECT_update_player_info();
+
+				// Update the GUI
+				window.gui.updateZone("None");
 
 				// Restart the round if we have that variable set
 				if(loop_rounds) {
