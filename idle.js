@@ -2,7 +2,7 @@
 var target_zone = -1;
 
 // Variables. Don't change these unless you know what you're doing.
-var max_scores = [590, 1180, 2360] // Max scores for each difficulty (easy, medium, hard)
+var max_scores = [600, 1200, 2400] // Max scores for each difficulty (easy(5), medium(10), hard(20) *120)
 var round_length = 120; // Round Length (In Seconds)
 var update_length = 15; // How long to wait between updates (In Seconds)
 var loop_rounds = true;
