@@ -13,6 +13,7 @@ var current_timeout = undefined;
 var max_retry = 3; // Max number of retries to report your score
 var current_retry = 0;
 var auto_first_join = true; // Automatically join the best zone at first
+var current_planet_id = undefined;
 
 // Grab the user's access token
 var INJECT_get_access_token = function() {
@@ -164,6 +165,28 @@ var INJECT_update_player_info = function() {
 	);
 }
 
+// Update the zones of the grid (map) on the current planet
+var INJECT_update_grid = function() {
+	if(current_planet_id === undefined)
+		return;
+
+	// GET to the endpoint
+	$J.ajax({
+		async: false,
+		type: "GET",
+		url: "https://community.steam-api.com/ITerritoryControlMinigameService/GetPlanet/v0001/",
+		data: { id: current_planet_id },
+		success: function(data) {
+			window.gGame.m_State.m_PlanetData = data.response.planets[0];
+			window.gGame.m_State.m_PlanetData.zones.forEach( function ( zone ) {
+				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.progress = zone.capture_progress; 
+				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.captured = zone.captured; 
+			});
+			console.log("Successfully updated map data on planet: " + current_planet_id);
+		}
+	});
+}
+
 // Get the best zone available
 function GetBestZone() {
 	var bestZoneIdx;
@@ -200,6 +223,9 @@ function GetBestZone() {
 // Switch to the next zone when one is completed
 function SwitchNextZone() {
 	next_zone = GetBestZone();
+	INJECT_leave_round();
+	INJECT_update_grid();
+	var next_zone = GetBestZone();
 	if (next_zone !== undefined) {
 		console.log("Zone #" + target_zone + " has ended. Trying #" + next_zone);
 		target_zone = next_zone;
@@ -218,6 +244,7 @@ if (auto_first_join == true) {
 	var delayingStart = setTimeout(firstJoin, 3000);
 	function firstJoin() {
 		clearTimeout(delayingStart);
+		current_planet_id = window.gGame.m_State.m_PlanetData.id;
 		var first_zone = GetBestZone();
 		target_zone = first_zone;
 		INJECT_start_round(first_zone, access_token);
@@ -226,6 +253,7 @@ if (auto_first_join == true) {
 
 // Overwrite join function so clicking on a grid square will run our code instead
 gServer.JoinZone = function (zone_id, callback, error_callback) {
+	current_planet_id = window.gGame.m_State.m_PlanetData.id;
 	target_zone = zone_id;
 	INJECT_start_round(zone_id, access_token);
 }
