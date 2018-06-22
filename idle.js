@@ -58,7 +58,7 @@ class BotGUI {
 		document.getElementById('salienbot_exp').innerText = exp;
 	}
 	
-	updateLevel(level) {
+	updateLevel(zone) {
 		document.getElementById('salienbot_zone').innerText = zone;
     }
     
