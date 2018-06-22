@@ -18,6 +18,52 @@ var current_retry = 0;
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
 
+class BotGUI {
+	constructor(state) {
+        console.log('GUI Has been created');
+        
+        this.state = state;
+		
+		this.createStatusWindow();
+	}
+	
+	createStatusWindow() {
+		if(document.getElementById('salienbot_gui')) {
+			return false;
+		}
+		
+		var $statusWindow = $J([
+			'<div id="salienbot_gui" style="background: #191919; border: 3px solid #83d674; padding: 20px; width: 300px; margin: 0 auto; transform: translate(0, -200px);">',
+				'<h1>Salien Game Idler</h1>',
+				'<p>Status: <span id="salienbot_status"></span></p>',
+				'<p>Level: <span id="salienbot_level">' + this.state.level + '</span></p>',
+				'<p>EXP: <span id="salienbot_exp">' + this.state.exp + '</span></p>',
+			'</div>'
+		].join(''))
+
+
+		$J('#salien_game_placeholder').append( $statusWindow )
+	}
+	
+	updateStatus(status) {
+        console.log(status);
+		document.getElementById('salienbot_status').innerText = status;
+	}
+	
+	updateExp(exp) {
+		document.getElementById('salienbot_exp').innerText = exp;
+	}
+	
+	updateLevel(level) {
+		document.getElementById('salienbot_level').innerText = level;
+	}
+};
+
+var gui = new BotGUI({
+    level: gPlayerInfo.level,
+    exp: gPlayerInfo.score
+});
+
 // Grab the user's access token
 var INJECT_get_access_token = function() {
 	$J.ajax({
@@ -67,8 +113,7 @@ var INJECT_start_round = function(zone, access_token) {
 
 // Update time remaining, and wait for the round to complete.
 var INJECT_wait_for_end = function(time_remaining) {
-	// Log to console
-	console.log("Time remaining in round: " + time_remaining + "s");
+    gui.updateStatus("Time remaining in round: " + time_remaining + "s");
 
 	// Wait
 	var wait_time;
@@ -113,7 +158,10 @@ var INJECT_end_round = function() {
 			else {
 				console.log("Successfully finished the round and got expected data back:");
 				console.log("Level: ", data.response.new_level, "\nEXP:   ", data.response.new_score);
-				console.log(data);
+                console.log(data);
+                
+                gui.updateLevel(data.response.new_level);
+                gui.updateExp(data.response.new_score);
 
 				// Update the player info in the UI
 				INJECT_update_player_info();
@@ -171,7 +219,10 @@ var INJECT_update_player_info = function() {
 // Update the zones of the grid (map) on the current planet
 var INJECT_update_grid = function() {
 	if(current_planet_id === undefined)
-		return;
+        return;
+        
+
+    gui.updateStatus('Updating grid');
 
 	// GET to the endpoint
 	$J.ajax({
@@ -193,7 +244,9 @@ var INJECT_update_grid = function() {
 // Get the best zone available
 function GetBestZone() {
 	var bestZoneIdx;
-	var highestDifficulty = -1;
+    var highestDifficulty = -1;
+    
+    gui.updateStatus('Getting best zone');
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
