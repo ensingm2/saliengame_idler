@@ -2,7 +2,7 @@
 var target_zone = -1;
 
 // Variables. Don't change these unless you know what you're doing.
-var max_scores = [600, 1200, 2400] // Max scores for each difficulty (easy(5), medium(10), hard(20) *120)
+var max_scores = [600, 1200, 2400] // Max scores for each difficulty (easy, medium, hard)
 var round_length = 120; // Round Length (In Seconds)
 var update_length = 15; // How long to wait between updates (In Seconds)
 var loop_rounds = true;
@@ -10,22 +10,25 @@ var language = "english"; // Used when POSTing scores
 var access_token = "";
 var current_game_id = undefined;
 var current_timeout = undefined;
+var max_retry = 3; // Max number of retries to report your score
+var current_retry = 0;
+var auto_first_join = true; // Automatically join the best zone at first
 
 // Grab the user's access token
 var INJECT_get_access_token = function() {
 	$J.ajax({
-	  type: "GET",
-	  url: "https://steamcommunity.com/saliengame/gettoken",
-	  success: function(data) {
-	  	if(data.token != undefined) {
-	  		console.log("Got access token: " + data.token);
-	  		access_token = data.token;
-	  	}
-	  	else {
-	  		console.log("Failed to retrieve access token.")
-	  		access_token = undefined;
-	  	}
-	  }
+		type: "GET",
+		url: "https://steamcommunity.com/saliengame/gettoken",
+		success: function(data) {
+			if(data.token != undefined) {
+				console.log("Got access token: " + data.token);
+				access_token = data.token;
+			}
+			else {
+				console.log("Failed to retrieve access token.")
+				access_token = undefined;
+			}
+		}
 	});
 }
 
@@ -45,8 +48,12 @@ var INJECT_start_round = function(zone, access_token) {
 		success: function(data) {
 			console.log("Round successfully started in zone #" + zone);
 			console.log(data);
-			current_game_id = data.response.zone_info.gameid;
-			INJECT_wait_for_end(round_length);
+			if (data.response.zone_info !== undefined) {
+				current_game_id = data.response.zone_info.gameid;
+				INJECT_wait_for_end(round_length);
+			} else {
+					SwitchNextZone();
+			}
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
 			alert("Error starting round: " + xhr.status + ": " + thrownError);
@@ -90,11 +97,18 @@ var INJECT_end_round = function() {
 		data: { access_token: access_token, score: score, language: language },
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
-				console.log("Empty Response. Waiting 5s and trying again.")
-				current_timeout = setTimeout(function() { INJECT_end_round(); }, 5000);
+				if (current_retry < max_retry) {
+					console.log("Empty Response. Waiting 5s and trying again.")
+					current_timeout = setTimeout(function() { INJECT_end_round(); }, 5000);
+					current_retry++;
+				} else {
+					current_retry = 0;
+					SwitchNextZone();
+				}
 			}
 			else {
 				console.log("Successfully finished the round and got expected data back:");
+				console.log("Level: ", data.response.new_level, "\nEXP:   ", data.response.new_score);
 				console.log(data);
 
 				// Update the player info in the UI
@@ -128,7 +142,7 @@ var INJECT_leave_round = function() {
 		url: "https://community.steam-api.com/IMiniGameService/LeaveGame/v0001/",
 		data: { access_token: access_token, gameid: current_game_id },
 		success: function(data) {}
-	},);
+	});
 
 	// Clear the current game ID var
 	current_game_id = undefined;
@@ -136,7 +150,7 @@ var INJECT_leave_round = function() {
 
 // returns 0 for easy, 1 for medium, 2 for hard
 var INJECT_get_difficulty = function(zone_id) {
-	return gGame.m_State.m_PlanetData.zones[zone_id].difficulty - 1;
+	return window.gGame.m_State.m_PlanetData.zones[zone_id].difficulty - 1;
 }
 
 // Updates the player info
@@ -150,8 +164,65 @@ var INJECT_update_player_info = function() {
 	);
 }
 
+// Get the best zone available
+function GetBestZone() {
+	var bestZoneIdx;
+	var highestDifficulty = -1;
+
+	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
+		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
+		if (!zone.captured) {
+			if (zone.boss) {
+				console.log("Zone " + idx + " with boss. Switching to it.");
+				return idx;
+			}
+
+			if(zone.difficulty > highestDifficulty) {
+				highestDifficulty = zone.difficulty;
+				maxProgress = zone.progress;
+				bestZoneIdx = idx;
+			} else if(zone.difficulty < highestDifficulty) continue;
+
+			if(zone.progress < maxProgress) {
+				maxProgress = zone.progress;
+				bestZoneIdx = idx;
+			}
+		}
+	}
+
+	if(bestZoneIdx !== undefined) {
+			console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZoneIdx} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.difficulty}`);
+	}
+
+	return bestZoneIdx;
+}
+
+// Switch to the next zone when one is completed
+function SwitchNextZone() {
+	next_zone = GetBestZone();
+	if (next_zone !== undefined) {
+		console.log("Zone #" + target_zone + " has ended. Trying #" + next_zone);
+		target_zone = next_zone;
+		INJECT_start_round(next_zone, access_token);
+	} else {
+		console.log("There's no more zone, the planet must be completed. You'll need to choose another planet!");
+		target_zone = -1;
+	}
+}
+
 // Auto-grab the access token
 INJECT_get_access_token();
+
+// Auto join best zone at first
+if (auto_first_join == true) {
+	var delayingStart = setTimeout(firstJoin, 3000);
+	function firstJoin() {
+		clearTimeout(delayingStart);
+		var first_zone = GetBestZone();
+		target_zone = first_zone;
+		INJECT_start_round(first_zone, access_token);
+	}
+}
 
 // Overwrite join function so clicking on a grid square will run our code instead
 gServer.JoinZone = function (zone_id, callback, error_callback) {
