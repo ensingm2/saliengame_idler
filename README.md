@@ -10,13 +10,20 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 * Automatically restarts runs after completion.
 
 ### How to Run
-Simply paste the Javascript code in your console (press F12 and go to the 'console' tab) while on the Game page. You can also set up Greasemonkey/etc scripts as the others do, but I'm not a fan of those myself, for security reasons.
+**Currently tested on Chrome, Firefox and Safari. The following guide is for Chrome only**
 
-The game will hook into the main menu, and automatically send requests every 120 seconds (the length of a round) for whichever zone you click on. Output can be seen in the console, for those who want it. **Tested in Chrome and Firefox only, currently**
+1. Open the Salien Game in a new tab and bring up the JavaScript Console
+   1. Windows: F12 or CTRL+Shift+J
+   1. Mac: Command+Option+J
+2. Copy the JavaScript code from [idle.js](idle.js) and paste it into the console and press enter
+3. Select a planet and click on a specific tile. The script will now automatically complete the game every 120 seconds
+   1. Output can be seen and tracked in the console
+
+Note: The script may also be setup on userscript managers such as Greasemonkey/Tampermonkey however this is advised against due to security matters.
 
 #### ***THERE IS CURRENTLY NO GRAPHICAL OUTPUT IN THIS VERSION, CHECK THE CONSOLE TO VERIFY IF IT IS WORKING***
 
-### TODO
+### TO DO
 * Add automated switching of zones when they are completed, prioritize by difficulty for extra points
 * Add some kind of UI to display status
 * Update player information window between runs
