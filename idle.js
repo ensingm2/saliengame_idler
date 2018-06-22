@@ -248,8 +248,8 @@ if (auto_first_join == true) {
 	function firstJoin() {
 		clearTimeout(delayingStart);
 		current_planet_id = window.gGame.m_State.m_PlanetData.id;
-		var first_zone = GetBestZone();
-		target_zone = first_zone;
+		if(target_zone === -1)
+			target_zone = GetBestZone();
 		INJECT_start_round(first_zone, access_token);
 	}
 }
