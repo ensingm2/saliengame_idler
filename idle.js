@@ -303,7 +303,7 @@ if (auto_first_join == true) {
 		current_planet_id = window.gGame.m_State.m_PlanetData.id;
 		if(target_zone === -1)
 			target_zone = GetBestZone();
-		INJECT_start_round(first_zone, access_token);
+		INJECT_start_round(target_zone, access_token);
 	}
 }
 
