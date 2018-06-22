@@ -59,7 +59,7 @@ class BotGUI {
 	}
 	
 	updateLevel(level) {
-		document.getElementById('salienbot_zone').innerText = zone;
+		document.getElementById('salienbot_zone').innerText = level;
     }
     
     updateEstimatedTime(secondsLeft) {
