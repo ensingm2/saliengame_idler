@@ -16,7 +16,6 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
    1. Windows: F12 or CTRL+Shift+J
    1. Mac: Command+Option+J
 2. Copy the JavaScript code from [idle.js](idle.js) and paste it into the console and press enter
-3. Select a planet and click on a specific tile. The script will now automatically complete the game every 120 seconds
    1. Output can be seen and tracked in the console
 
 Note: The script may also be setup on userscript managers such as Greasemonkey/Tampermonkey however this is advised against due to security matters.
