@@ -33,8 +33,8 @@ class BotGUI {
 		}
 		
 		var $statusWindow = $J([
-			'<div id="salienbot_gui" style="background: #191919; border: 3px solid #83d674; padding: 20px; width: 300px; margin: 0 auto; transform: translate(0, -200px);">',
-				'<h1>Salien Game Idler</h1>',
+			'<div id="salienbot_gui" style="background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; width: 300px; margin: 15 15; transform: translate(0, 0px);">',
+				'<h1><a href="https://github.com/ensingm2/saliengame_idler/">Salien Game Idler</a></h1>',
 				'<p>Status: <span id="salienbot_status"></span></p>',
 				'<p>Level: <span id="salienbot_level">' + this.state.level + '</span></p>',
 				'<p>EXP: <span id="salienbot_exp">' + this.state.exp + '</span></p>',
