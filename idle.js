@@ -72,8 +72,12 @@ class BotGUI {
         document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
     }
 
-	updateZone(zone) {
-		document.getElementById('salienbot_zone').innerText = zone;
+	updateZone(zone, progress) {
+		var printString = zone;
+		if(progress !== undefined)
+			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
+
+		document.getElementById('salienbot_zone').innerText = printString;
     }
 };
 
@@ -131,7 +135,7 @@ var INJECT_start_round = function(zone, access_token) {
 			console.log(data);
 
 			// Update the GUI
-			window.gui.updateZone(zone);
+			window.gui.updateZone(zone, data.response.zone_info.capture_progress);
 
 			if (data.response.zone_info !== undefined) {
 				current_game_id = data.response.zone_info.gameid;
