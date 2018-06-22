@@ -10,9 +10,9 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 * Automatically restarts runs after completion.
 
 ### How to Run
-Simply paste the Javascript code in your console while on the Game page. You can also set up Greasemonkey/etc scripts as the others do, but I'm not a fan of those myself, for security reasons.
+Simply paste the Javascript code in your console (press F12 and go to the 'console' tab) while on the Game page. You can also set up Greasemonkey/etc scripts as the others do, but I'm not a fan of those myself, for security reasons.
 
-The game will hook into the main menu, and automatically send requests every 120 seconds (the length of a round) for whichever zone you click on. Output can be seen in the console, for those who want it. **Tested in Chrome only, currently**
+The game will hook into the main menu, and automatically send requests every 120 seconds (the length of a round) for whichever zone you click on. Output can be seen in the console, for those who want it. **Tested in Chrome and Firefox only, currently**
 
 #### ***THERE IS CURRENTLY NO GRAPHICAL OUTPUT IN THIS VERSION, CHECK THE CONSOLE TO VERIFY IF IT IS WORKING***
 
