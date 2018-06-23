@@ -10,8 +10,7 @@ var language = "english"; // Used when POSTing scores
 var access_token = "";
 var current_game_id = undefined;
 var current_timeout = undefined;
-var max_retry = 3; // Max number of retries to report your score
-var current_retry = 0;
+var max_retry = 5; // Max number of retries to send requests
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
 
@@ -124,15 +123,15 @@ var INJECT_get_access_token = function() {
 }
 
 // Make the call to start a round, and kick-off the idle process
-var INJECT_start_round = function(zone, access_token) {
+var INJECT_start_round = function(zone, access_token, attempt_no) {
+	if(attempt_no === undefined)
+		attempt_no = 0;
+
 	// Leave the game if we're already in one.
 	if(current_game_id !== undefined) {
 		gui.updateTask("Previous game detected. Ending it.", true);
 		INJECT_leave_round();
 	}
-
-	// Update the estimate
-	gui.updateEstimatedTime(calculateTimeToNextLevel())
 
 	// Send the POST to join the game.
 	$J.ajax({
@@ -140,7 +139,19 @@ var INJECT_start_round = function(zone, access_token) {
 		url: "https://community.steam-api.com/ITerritoryControlMinigameService/JoinZone/v0001/",
 		data: { access_token: access_token, zone_position: zone },
 		success: function(data) {
-			if (data.response.zone_info !== undefined) {
+			if( $J.isEmptyObject(data.response) ) {
+				if(attempt_no < max_retry) {
+					console.log("Error getting zone response:",data);
+					gui.updateTask("Waiting 5s and re-sending join attempt(Attempt #" + attempt_no + ").");
+					setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
+				}
+				else {
+					gui.updateTask("Something went wrong attempting to start a round. Please refresh");
+					gui.updateStatus(false);
+					return;
+				}
+			}
+			else {
 				console.log("Round successfully started in zone #" + zone);
 				console.log(data);
 
@@ -148,14 +159,12 @@ var INJECT_start_round = function(zone, access_token) {
 				target_zone = zone;
 
 				// Update the GUI
-				window.gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
 				gui.updateStatus(true);
+				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
+				gui.updateEstimatedTime(calculateTimeToNextLevel())
 
 				current_game_id = data.response.zone_info.gameid;
 				INJECT_wait_for_end(resend_frequency);
-			} else {
-				console.log("Error getting zone response:",data);
-				SwitchNextZone();
 			}
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -188,9 +197,15 @@ var INJECT_wait_for_end = function(time_remaining) {
 }
 
 // Send the call to end a round, and restart if needed.
-var INJECT_end_round = function() {
+var INJECT_end_round = function(attempt_no) {
+	if(attempt_no === undefined)
+		attempt_no = 0;
+
 	// Grab the max score we're allowed to send
 	var score = get_max_score();
+
+	// Update gui
+	gui.updateTask("Ending Round");
 
 	// Post our "Yay we beat the level" call
 	$J.ajax({
@@ -199,13 +214,15 @@ var INJECT_end_round = function() {
 		data: { access_token: access_token, score: score, language: language },
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
-				if (current_retry < max_retry) {
-					gui.updateTask("Empty Response. Waiting 5s and trying again.", true);
-					current_timeout = setTimeout(function() { INJECT_end_round(); }, 5000);
-					current_retry++;
-				} else {
-					current_retry = 0;
-					SwitchNextZone();
+				if(attempt_no < max_retry) {
+					console.log("Error getting zone response:",data);
+					gui.updateTask("Waiting 5s and re-sending score(Attempt #" + attempt_no + ").");
+					setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
+				}
+				else {
+					gui.updateTask("Something went wrong attempting to send results. Please refresh");
+					gui.updateStatus(false);
+					return;
 				}
 			}
 			else {
@@ -349,14 +366,16 @@ function GetBestZone() {
 }
 
 // Switch to the next zone when one is completed
-function SwitchNextZone() {
+function SwitchNextZone(attempt_no) {
+	if(attempt_no === undefined)
+		attempt_no = 0;
+
 	INJECT_leave_round();
 	INJECT_update_grid();
 	var next_zone = GetBestZone();
 	if (next_zone !== undefined) {
-		console.log("Zone #" + target_zone + " has ended. Trying #" + next_zone);
-		target_zone = next_zone;
-		INJECT_start_round(next_zone, access_token);
+		console.log("Found Best Zone: " + next_zone);
+		INJECT_start_round(next_zone, access_token, attempt_no);
 	} else {
 		console.log("There's no more zone, the planet must be completed. You'll need to choose another planet!");
 		target_zone = -1;
@@ -372,9 +391,14 @@ if (auto_first_join == true) {
 	function firstJoin() {
 		clearTimeout(delayingStart);
 		current_planet_id = window.gGame.m_State.m_PlanetData.id;
+
+		var first_zone;
 		if(target_zone === -1)
-			target_zone = GetBestZone();
-		INJECT_start_round(target_zone, access_token);
+			first_zone = GetBestZone();
+		else
+			first_zone = target_zone
+
+		INJECT_start_round(first_zone, access_token);
 	}
 }
 
@@ -384,7 +408,6 @@ if (auto_first_join == true) {
 // Overwrite join function so clicking on a grid square will run our code instead
 gServer.JoinZone = function (zone_id, callback, error_callback) {
 	current_planet_id = window.gGame.m_State.m_PlanetData.id;
-	target_zone = zone_id;
 	INJECT_start_round(zone_id, access_token);
 }
 
@@ -397,6 +420,15 @@ gGame.m_State.m_Grid.click = function(tileX, tileY) {
 	// Return if it's the current zone (Don't want clicking on same zone to leave/rejoin)
 	if(target_zone === zoneIdx)
 		return;
+
+	// Return if it's a completed zone
+	if(window.gGame.m_State.m_Grid.m_Tiles[zoneIdx].Info.captured) {
+		console.log("Manually selected zone already captured. Returning.");
+		return;
+	}
+
+	// Update the GUI
+	gui.updateTask("Attempting manual switch to Zone #" + zoneIdx);
 
 	// Leave existing round
 	INJECT_leave_round();
