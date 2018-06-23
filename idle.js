@@ -96,9 +96,9 @@ var gui = new BotGUI({
 	exp: gPlayerInfo.score
 });
 
-function calculateTimeToNextLevel() {	
+function calculateTimeToNextLevel() {
+	const missingExp = gPlayerInfo.next_level_score - gPlayerInfo.score;
 	const nextScoreAmount = get_max_score(target_zone);
-	const missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount;
 	const roundTime = resend_frequency + update_length;
 
 	const secondsLeft = missingExp / nextScoreAmount * roundTime;
