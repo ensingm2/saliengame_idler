@@ -312,6 +312,7 @@ var INJECT_update_grid = function() {
 			window.gGame.m_State.m_PlanetData.zones.forEach( function ( zone ) {
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.progress = zone.capture_progress; 
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.captured = zone.captured; 
+				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.difficulty = zone.difficulty; 
 			});
 			console.log("Successfully updated map data on planet: " + current_planet_id);
 		}
