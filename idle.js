@@ -183,7 +183,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 					if (auto_switch_planet.current_difficulty < auto_switch_planet.wanted_difficulty) {
 						if (auto_switch_planet.current_round >= auto_switch_planet.rounds_before_check) {
 							auto_switch_planet.current_round = 0;
-							CheckSwitchBetterPlanet();
+							CheckSwitchBetterPlanet(true);
 						} else {
 							auto_switch_planet.current_round++;
 						}
@@ -492,7 +492,9 @@ function SwitchNextZone(attempt_no, planet_call) {
 }
 
 // Check & switch for a potentially better planet, start to the best available zone
-function CheckSwitchBetterPlanet() {
+function CheckSwitchBetterPlanet(difficulty_call) {
+	if (difficulty_call === undefined)
+		difficulty_call = false;
 	var best_planet = GetBestPlanet();
 	if (best_planet !== undefined && best_planet !== null && best_planet !== current_planet_id) {
 		console.log("Planet #" + best_planet + " has higher XP potential. Switching to it. Bye planet #" + current_planet_id);
@@ -501,7 +503,7 @@ function CheckSwitchBetterPlanet() {
 			INJECT_start_round(target_zone, access_token);
 		});
 	} else if (best_planet == current_planet_id) {
-		SwitchNextZone(0, true);
+		SwitchNextZone(0, difficulty_call);
 	} else if (best_planet === null) {
 		console.log("Too many errors while searching a better planet. Let's continue on the current zone.");
 		INJECT_start_round(target_zone, access_token);
