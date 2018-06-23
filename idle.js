@@ -49,8 +49,9 @@ class BotGUI {
 		$J('#salienbot_status').html(statusTxt);
     }
     
-    updateTask(status) {
-        console.log(status);
+    updateTask(status, log_to_console) {
+    	if(log_to_console)
+        	console.log(status);
 		document.getElementById('salienbot_task').innerText = status;
 	}
 
@@ -118,7 +119,7 @@ var INJECT_get_access_token = function() {
 var INJECT_start_round = function(zone, access_token) {
 	// Leave the game if we're already in one.
 	if(current_game_id !== undefined) {
-        gui.updateTask("Previous game detected. Ending it.");
+        gui.updateTask("Previous game detected. Ending it.", true);
 		INJECT_leave_round();
     }
     
@@ -152,7 +153,7 @@ var INJECT_start_round = function(zone, access_token) {
 
 // Update time remaining, and wait for the round to complete.
 var INJECT_wait_for_end = function(time_remaining) {
-    gui.updateTask("Time remaining in round: " + time_remaining + "s");
+    gui.updateTask("Time remaining in round: " + time_remaining + "s", false);
 
 	// Wait
 	var wait_time;
@@ -186,7 +187,7 @@ var INJECT_end_round = function() {
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
 				if (current_retry < max_retry) {
-                    gui.updateTask("Empty Response. Waiting 5s and trying again.");
+                    gui.updateTask("Empty Response. Waiting 5s and trying again.", true);
 					current_timeout = setTimeout(function() { INJECT_end_round(); }, 5000);
 					current_retry++;
 				} else {
@@ -266,7 +267,7 @@ var INJECT_update_grid = function() {
 	if(current_planet_id === undefined)
 		return;
 
-    gui.updateTask('Updating grid');
+    gui.updateTask('Updating grid', true);
 
 	// GET to the endpoint
 	$J.ajax({
