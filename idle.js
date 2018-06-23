@@ -182,7 +182,7 @@ var INJECT_start_round = function(zone, access_token) {
 // Update time remaining, and wait for the round to complete.
 var INJECT_wait_for_end = function(time_remaining) {
 	gui.updateTask("Waiting " + time_remaining + "s for round to end", false);
-
+	gui.updateStatus(1);
 	// Wait
 	var wait_time;
 	var callback;
@@ -340,7 +340,6 @@ var INJECT_leave_planet = function() {
 
 	// Clear the current planet ID var
 	current_planet_id = undefined;
-	gui.updateStatus(0);
 }
 
 // Join a planet
@@ -470,18 +469,17 @@ function GetBestPlanet() {
 
 // Switch to the next zone when one is completed
 function SwitchNextZone() {
+	INJECT_update_grid();
 	var next_zone = GetBestZone();
 	if (next_zone !== undefined) {
 		if (next_zone != target_zone) {
 			INJECT_leave_round();
-			INJECT_update_grid();
 			console.log("Zone #" + target_zone + " has ended. Trying #" + next_zone);
 			target_zone = next_zone;
-			INJECT_start_round(next_zone, access_token);
 		} else {
 			console.log("Current zone #" + target_zone + " is already the best. No switch.");
-			INJECT_start_round(target_zone, access_token);
 		}
+		INJECT_start_round(target_zone, access_token);
 	} else {
 		if (auto_switch_planet.active == true) {
 			console.log("There's no more zone, the planet must be completed. Searching a new one.");
