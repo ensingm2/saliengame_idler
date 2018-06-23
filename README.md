@@ -22,7 +22,7 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 2. Bring up the JavaScript Console
    1. Windows: F12 or CTRL+Shift+J
    1. Mac: Command+Option+J
-3. Copy the JavaScript code from [idle.js](idle.js) and paste it into the console and press enter
+3. Copy the JavaScript code from [idle.js](https://raw.githubusercontent.com/ensingm2/saliengame_idler/master/idle.js) and paste it into the console and press enter
    1. Output can be seen and tracked in the console
 
 Note: The script may also be setup on userscript managers such as Greasemonkey/Tampermonkey however this is advised against enabling automatic updates for _*any*_ scripts, for your own security.
