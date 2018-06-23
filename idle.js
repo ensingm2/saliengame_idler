@@ -535,10 +535,10 @@ var INJECT_init = function() {
 var INJECT_disable_animations = function() {
 	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Continue?");
 
-	if(confirmed)
+	if(confirmed) {
 		requestAnimationFrame = function(){};
-
-	$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
+		$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
+	}
 };
 
 // ============= CODE THAT AUTORUNS ON LOAD =============
