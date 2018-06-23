@@ -161,12 +161,12 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 					setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
 				}
 				else {
-                    attempt_no = 0;
+                   	attempt_no = 0;
 					if (auto_switch_planet.active == true) {
-                        CheckSwitchBetterPlanet();
-                    } else {
-                        SwitchNextZone(attempt_no);
-                    }
+						CheckSwitchBetterPlanet();
+					} else {
+						SwitchNextZone(attempt_no);
+					}
 				}
 			}
 			else {
@@ -461,9 +461,11 @@ function GetBestPlanet() {
 }
 
 // Switch to the next zone when one is completed
-function SwitchNextZone(attempt_no) {
+function SwitchNextZone(attempt_no, planet_call) {
 	if(attempt_no === undefined)
 		attempt_no = 0;
+	if (planet_call === undefined)
+		planet_call = false;
 	INJECT_update_grid();
 	var next_zone = GetBestZone();
 	if (next_zone !== undefined) {
@@ -472,6 +474,8 @@ function SwitchNextZone(attempt_no) {
 			INJECT_start_round(target_zone, access_token, attempt_no);
 		} else {
 			console.log("Current zone #" + target_zone + " is already the best. No need to switch.");
+			if (planet_call === true)
+				INJECT_start_round(target_zone, access_token, attempt_no);
 		}
 	} else {
 		if (auto_switch_planet.active == true) {
@@ -497,7 +501,7 @@ function CheckSwitchBetterPlanet() {
 			INJECT_start_round(target_zone, access_token);
 		});
 	} else if (best_planet == current_planet_id) {
-		SwitchNextZone();
+		SwitchNextZone(0, true);
 	} else if (best_planet === null) {
 		console.log("Too many errors while searching a better planet. Let's continue on the current zone.");
 		INJECT_start_round(target_zone, access_token);
