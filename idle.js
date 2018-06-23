@@ -462,7 +462,7 @@ function GetBestPlanet() {
 	console.log(activePlanetsScore);
 	// Prevent a planet switch if there were >= 2 errors while fetching planets
 	if (numberErrors >= 2)
-		return current_planet_id;
+		return null;
 	
 	return bestPlanetId;
 }
@@ -496,7 +496,7 @@ function SwitchNextZone() {
 // Check & switch for a potentially better planet, start to the best available zone
 function CheckSwitchBetterPlanet() {
 	var best_planet = GetBestPlanet();
-	if (best_planet !== undefined && best_planet !== current_planet_id) {
+	if (best_planet !== undefined && best_planet !== null && best_planet !== current_planet_id) {
 		INJECT_leave_round();
 		console.log("Planet #" + best_planet + " has higher XP potentiel. Switching to it. Bye planet #" + current_planet_id);
 		INJECT_leave_planet();
@@ -506,6 +506,9 @@ function CheckSwitchBetterPlanet() {
 		INJECT_start_round(target_zone, access_token);
 	} else if (best_planet == current_planet_id) {
 		SwitchNextZone();
+	} else if (best_planet === null) {
+		console.log("Too many errors while searching a better planet. Let's continue on the current zone.");
+		INJECT_start_round(target_zone, access_token);
 	} else {
 		console.log("There's no planet better than the current one.");
 	}
