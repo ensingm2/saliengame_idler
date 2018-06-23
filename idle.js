@@ -37,6 +37,7 @@ class BotGUI {
 				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span></p>`,
 				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
+				'<p><input id="disableAnimsBtn" type="button" onclick="INJECT_disable_animations()" value="Disable Animations"/></p>',
 			'</div>'
 		].join(''))
 
@@ -529,7 +530,16 @@ var INJECT_init = function() {
 		INJECT_init_battle_selection();
 	else if (gGame.m_State instanceof CPlanetSelectionState)
 		INJECT_init_planet_selection();
-}
+};
+
+var INJECT_disable_animations = function() {
+	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Continue?");
+
+	if(confirmed)
+		requestAnimationFrame = function(){};
+
+	$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
+};
 
 // ============= CODE THAT AUTORUNS ON LOAD =============
 // Auto-grab the access token

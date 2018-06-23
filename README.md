@@ -10,7 +10,7 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 * Fast switching between zones.
 * Will automatically send the maximum score allowed for each zone difficulty.
 * Automatically restarts runs after completion.
-* ~Disables game animations to minimize game resource usage.~ (Temporarily disabled)
+* Optionally disables game animations to minimize game resource usage.
 * Status GUI to update level, experience, time remaining in round, etc
 * Allows manual override of zone selection
 * Allows quick-switching of planets
