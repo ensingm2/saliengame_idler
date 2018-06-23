@@ -153,7 +153,7 @@ var INJECT_start_round = function(zone, access_token) {
 
 // Update time remaining, and wait for the round to complete.
 var INJECT_wait_for_end = function(time_remaining) {
-    gui.updateTask("Time remaining in round: " + time_remaining + "s", false);
+    gui.updateTask("Waiting " + time_remaining + "s for round to end", false);
 
 	// Wait
 	var wait_time;
