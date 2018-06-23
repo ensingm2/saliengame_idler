@@ -14,6 +14,18 @@ var max_retry = 3; // Max number of retries to report your score
 var current_retry = 0;
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
+var auto_switch_planet = {
+	"active": true, // Automatically switch to the best planet available (true : yes, false : no)
+	"current_difficulty": undefined,
+	"wanted_difficulty": 3, // Difficulty prefered. Will check planets if the current one differs
+	"rounds_before_check": 5, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
+	"current_round": 0,
+	"coeffScore": {
+		1: 1,
+		2: 100,
+		3: 10000
+	}
+};
 
 class BotGUI {
 	constructor(state) {
@@ -138,10 +150,27 @@ var INJECT_start_round = function(zone, access_token) {
 			if (data.response.zone_info !== undefined) {
 				// Update the GUI
 				window.gui.updateZone(zone, data.response.zone_info.capture_progress);
+				if (auto_switch_planet.active == true) {
+					if (auto_switch_planet.current_difficulty != data.response.zone_info.difficulty)
+						auto_switch_planet.current_round = 0; // Difficulty changed, reset rounds counter before new planet check
+					auto_switch_planet.current_difficulty = data.response.zone_info.difficulty;
+					if (auto_switch_planet.current_difficulty < auto_switch_planet.wanted_difficulty) {
+						if (auto_switch_planet.current_round >= auto_switch_planet.rounds_before_check) {
+							auto_switch_planet.current_round = 0;
+							CheckSwitchBetterPlanet();
+						} else {
+							auto_switch_planet.current_round++;
+						}
+					}
+				}
 				current_game_id = data.response.zone_info.gameid;
 				INJECT_wait_for_end(resend_frequency);
 			} else {
-				SwitchNextZone();
+				if (auto_switch_planet.active == true) {
+					CheckSwitchBetterPlanet();
+				} else {
+					SwitchNextZone();
+				}
 			}
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -191,7 +220,11 @@ var INJECT_end_round = function() {
 					current_retry++;
 				} else {
 					current_retry = 0;
-					SwitchNextZone();
+					if (auto_switch_planet.active == true) {
+						CheckSwitchBetterPlanet();
+					} else {
+						SwitchNextZone();
+					}
 				}
 			}
 			else {
@@ -285,6 +318,55 @@ var INJECT_update_grid = function() {
 	});
 }
 
+// Leave the current planet
+var INJECT_leave_planet = function() {
+	if(current_planet_id === undefined)
+		return;
+
+	console.log("Leaving planet: " + current_planet_id);
+
+	// Cancel timeouts
+	clearTimeout(current_timeout);
+
+	// POST to the endpoint
+	$J.ajax({
+		async: false,
+		type: "POST",
+		url: "https://community.steam-api.com/IMiniGameService/LeaveGame/v0001/",
+		data: { access_token: access_token, gameid: current_planet_id },
+		success: function(data) {}
+	});
+
+	// Clear the current planet ID var
+	current_planet_id = undefined;
+	gui.updateStatus(0);
+}
+
+// Join a planet
+var INJECT_join_planet = function(planet_id, access_token) {
+	if(current_planet_id !== undefined)
+		INJECT_leave_planet();
+
+	console.log("Joining planet: " + planet_id);
+
+	// POST to the endpoint
+	$J.ajax({
+		async: false,
+		type: "POST",
+		url: "https://community.steam-api.com/ITerritoryControlMinigameService/JoinPlanet/v0001/",
+		data: { access_token: access_token, id: planet_id },
+		success: function(data) {
+			current_planet_id = planet_id;
+		},
+		error: function (xhr, ajaxOptions, thrownError) {
+			alert("Error starting round: " + xhr.status + ": " + thrownError);
+		}
+	});
+	
+	// Update the grid data to the current planet
+	INJECT_update_grid();
+}
+
 // Defaults to max score of current zone & full round duration if no params are given
 function get_max_score(zone, round_duration) {
 	// defaults
@@ -334,18 +416,92 @@ function GetBestZone() {
 	return bestZoneIdx;
 }
 
+// Get the best planet available
+function GetBestPlanet() {
+	var bestPlanetId = undefined;
+	var activePlanetsScore = [];
+	var maxScore = 0;
+	
+	gui.updateStatus('Getting best planet');
+	
+	// GET to the endpoint
+	$J.ajax({
+		async: false,
+		type: "GET",
+		url: "https://community.steam-api.com/ITerritoryControlMinigameService/GetPlanets/v0001/",
+		success: function(data) {
+			data.response.planets.forEach( function(planet) {
+				if (planet.state.active == true && planet.state.captured == false)
+					activePlanetsScore[planet.id] = 0;
+			});
+		}
+	});
+	
+	// GET the score of each active planet
+	Object.keys(activePlanetsScore).forEach ( function (planet_id) {
+		// GET to the endpoint
+		$J.ajax({
+			async: false,
+			type: "GET",
+			url: "https://community.steam-api.com/ITerritoryControlMinigameService/GetPlanet/v0001/",
+			data: { id: planet_id },
+			success: function(data) {
+				data.response.planets[0].zones.forEach( function ( zone ) {
+					if (zone.difficulty >= 1 && zone.difficulty <= 3)
+						activePlanetsScore[planet_id] += auto_switch_planet["coeffScore"][zone.difficulty];
+				});
+			}
+		});
+		if (activePlanetsScore[planet_id] > maxScore) {
+			maxScore = activePlanetsScore[planet_id];
+			bestPlanetId = planet_id;
+		}
+	});
+	
+	return bestPlanetId;
+}
+
 // Switch to the next zone when one is completed
 function SwitchNextZone() {
-	INJECT_leave_round();
-	INJECT_update_grid();
 	var next_zone = GetBestZone();
 	if (next_zone !== undefined) {
-		console.log("Zone #" + target_zone + " has ended. Trying #" + next_zone);
-		target_zone = next_zone;
-		INJECT_start_round(next_zone, access_token);
+		if (next_zone != target_zone) {
+			INJECT_leave_round();
+			INJECT_update_grid();
+			console.log("Zone #" + target_zone + " has ended. Trying #" + next_zone);
+			target_zone = next_zone;
+			INJECT_start_round(next_zone, access_token);
+		} else {
+			console.log("Current zone #" + target_zone + " is already the best. No switch.");
+		}
 	} else {
-		console.log("There's no more zone, the planet must be completed. You'll need to choose another planet!");
-		target_zone = -1;
+		if (auto_switch_planet.active == true) {
+			console.log("There's no more zone, the planet must be completed. Searching a new one.");
+			CheckSwitchBetterPlanet();
+		} else {
+			INJECT_leave_round();
+			INJECT_update_grid();
+			console.log("There's no more zone, the planet must be completed. You'll need to choose another planet!");
+			target_zone = -1;
+		}
+	}
+}
+
+// Check & switch for a potentially better planet, start to the best available zone
+function CheckSwitchBetterPlanet() {
+	var best_planet = GetBestPlanet();
+	if (best_planet !== undefined && best_planet !== current_planet_id) {
+		INJECT_leave_round();
+		console.log("Planet #" + best_planet + " has higher XP potentiel. Switching to it. Bye planet #" + current_planet_id);
+		INJECT_leave_planet();
+		current_planet_id = best_planet;
+		INJECT_join_planet(best_planet, access_token);
+		target_zone = GetBestZone();
+		INJECT_start_round(target_zone, access_token);
+	} else if (best_planet == current_planet_id) {
+		SwitchNextZone();
+	} else {
+		console.log("There's no planet better than the current one.");
 	}
 }
 
