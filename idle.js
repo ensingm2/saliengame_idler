@@ -135,10 +135,9 @@ var INJECT_start_round = function(zone, access_token) {
 			console.log("Round successfully started in zone #" + zone);
 			console.log(data);
 
-			// Update the GUI
-			window.gui.updateZone(zone, data.response.zone_info.capture_progress);
-
 			if (data.response.zone_info !== undefined) {
+				// Update the GUI
+				window.gui.updateZone(zone, data.response.zone_info.capture_progress);
 				current_game_id = data.response.zone_info.gameid;
 				INJECT_wait_for_end(round_length);
 			} else {
