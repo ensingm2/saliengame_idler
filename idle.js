@@ -225,8 +225,14 @@ var INJECT_end_round = function(attempt_no) {
 					setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
 				}
 				else {
-					gui.updateTask("Something went wrong attempting to send results. Please refresh");
-					gui.updateStatus(false);
+					if(loop_rounds) {
+						gui.updateTask("Something went wrong, attempting restart.");
+						setTimeout(INJECT_restart_round, 2000);
+					}
+					else {
+						gui.updateTask("Something went wrong attempting to send results. Please refresh");
+						gui.updateStatus(false);
+					}
 					return;
 				}
 			}
@@ -248,13 +254,17 @@ var INJECT_end_round = function(attempt_no) {
 
 				// Restart the round if we have that variable set
 				if(loop_rounds) {
-					UpdateNotificationCounts();
-					current_game_id = undefined;
-					INJECT_start_round(target_zone, access_token)
+					INJECT_restart_round();
 				}
 			}
 		}
 	});
+}
+
+var INJECT_restart_round = function() {
+	UpdateNotificationCounts();
+	current_game_id = undefined;
+	INJECT_start_round(GetBestZone(), access_token);
 }
 
 // Leave an existing game
@@ -344,6 +354,9 @@ function get_max_score(zone, round_duration) {
 function GetBestZone() {
 	var bestZoneIdx;
 	var highestDifficulty = -1;
+	
+	// Refresh grid data
+	INJECT_update_grid();
 
 	gui.updateTask('Getting best zone');
 
