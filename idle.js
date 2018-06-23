@@ -15,7 +15,7 @@ var current_retry = 0;
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
 var auto_switch_planet = {
-	"active": true, // Automatically switch to the best planet available (true : yes, false : no)
+	"active": false, // Automatically switch to the best planet available (true : yes, false : no)
 	"current_difficulty": undefined,
 	"wanted_difficulty": 3, // Difficulty prefered. Will check planets if the current one differs
 	"rounds_before_check": 5, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
@@ -460,8 +460,8 @@ function GetBestPlanet() {
 		}
 	});
 	console.log(activePlanetsScore);
-	// Prevent a planet switch if there were >= 2 errors while fetching planets
-	if (numberErrors >= 2)
+	// Prevent a planet switch if there were >= 2 errors while fetching planets or if there's an error while fetching the current planet score
+	if (numberErrors >= 2 || activePlanetsScore[current_planet_id] == 0)
 		return null;
 	
 	return bestPlanetId;
