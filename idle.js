@@ -446,8 +446,8 @@ function GetBestPlanet() {
 			data: { id: planet_id },
 			success: function(data) {
 				data.response.planets[0].zones.forEach( function ( zone ) {
-					if (zone.difficulty >= 1 && zone.difficulty <= 3)
-						activePlanetsScore[planet_id] += auto_switch_planet["coeffScore"][zone.difficulty];
+					if (zone.difficulty >= 1 && zone.difficulty <= 3 && zone.captured == false)
+						activePlanetsScore[planet_id] += Math.round(auto_switch_planet["coeffScore"][zone.difficulty] * (1 - capture_progress));
 				});
 			}
 		});
@@ -456,7 +456,7 @@ function GetBestPlanet() {
 			bestPlanetId = planet_id;
 		}
 	});
-	
+	console.log(activePlanetsScore);
 	return bestPlanetId;
 }
 
