@@ -10,8 +10,7 @@ var language = "english"; // Used when POSTing scores
 var access_token = "";
 var current_game_id = undefined;
 var current_timeout = undefined;
-var max_retry = 3; // Max number of retries to report your score
-var current_retry = 0;
+var max_retry = 5; // Max number of retries to send requests
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
 var auto_switch_planet = {
@@ -47,8 +46,10 @@ class BotGUI {
 				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
 				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
 				`<p><b>Target Zone:</b> <span id="salienbot_zone">None</span></p>`,
+				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span></p>`,
 				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
+				'<p><input id="disableAnimsBtn" type="button" onclick="INJECT_disable_animations()" value="Disable Animations"/></p>',
 			'</div>'
 		].join(''))
 
@@ -62,7 +63,7 @@ class BotGUI {
 	}
 
 	updateTask(status, log_to_console) {
-		if(log_to_console)
+		if(log_to_console || log_to_console === undefined)
 			console.log(status);
 		document.getElementById('salienbot_task').innerText = status;
 	}
@@ -85,12 +86,19 @@ class BotGUI {
 		document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
 	}
 
-	updateZone(zone, progress) {
+	updateZone(zone, progress, difficulty) {
 		var printString = zone;
 		if(progress !== undefined)
 			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
+		if(progress === undefined) {
+			$J("#salienbot_zone_difficulty_div").hide();
+			difficulty = "";
+		}
+		else
+			$J("#salienbot_zone_difficulty_div").show();
 
 		document.getElementById('salienbot_zone').innerText = printString;
+		document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
 	}
 };
 
@@ -112,6 +120,7 @@ function calculateTimeToNextLevel() {
 // Grab the user's access token
 var INJECT_get_access_token = function() {
 	$J.ajax({
+		async: false,
 		type: "GET",
 		url: "https://steamcommunity.com/saliengame/gettoken",
 		success: function(data) {
@@ -128,15 +137,15 @@ var INJECT_get_access_token = function() {
 }
 
 // Make the call to start a round, and kick-off the idle process
-var INJECT_start_round = function(zone, access_token) {
+var INJECT_start_round = function(zone, access_token, attempt_no) {
+	if(attempt_no === undefined)
+		attempt_no = 0;
+
 	// Leave the game if we're already in one.
 	if(current_game_id !== undefined) {
 		gui.updateTask("Previous game detected. Ending it.", true);
 		INJECT_leave_round();
 	}
-
-	// Update the estimate
-	gui.updateEstimatedTime(calculateTimeToNextLevel())
 
 	// Send the POST to join the game.
 	$J.ajax({
@@ -144,12 +153,29 @@ var INJECT_start_round = function(zone, access_token) {
 		url: "https://community.steam-api.com/ITerritoryControlMinigameService/JoinZone/v0001/",
 		data: { access_token: access_token, zone_position: zone },
 		success: function(data) {
-			console.log("Round successfully started in zone #" + zone);
-			console.log(data);
+			if( $J.isEmptyObject(data.response) ) {
+				if(attempt_no < max_retry) {
+					console.log("Error getting zone response:",data);
+					gui.updateTask("Waiting 5s and re-sending join attempt(Attempt #" + attempt_no + ").");
+					setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
+				}
+				else {
+                    attempt_no = 0;
+					if (auto_switch_planet.active == true) {
+                        CheckSwitchBetterPlanet();
+                    } else {
+                        SwitchNextZone();
+                    }
+				}
+			}
+			else {
+				console.log("Round successfully started in zone #" + zone);
+				console.log(data);
 
-			if (data.response.zone_info !== undefined) {
+				// Set target
+				target_zone = zone;
+
 				// Update the GUI
-				window.gui.updateZone(zone, data.response.zone_info.capture_progress);
 				if (auto_switch_planet.active == true) {
 					if (auto_switch_planet.current_difficulty != data.response.zone_info.difficulty)
 						auto_switch_planet.current_round = 0; // Difficulty changed, reset rounds counter before new planet check
@@ -163,14 +189,12 @@ var INJECT_start_round = function(zone, access_token) {
 						}
 					}
 				}
+        gui.updateStatus(true);
+				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
+				gui.updateEstimatedTime(calculateTimeToNextLevel());
+        
 				current_game_id = data.response.zone_info.gameid;
 				INJECT_wait_for_end(resend_frequency);
-			} else {
-				if (auto_switch_planet.active == true) {
-					CheckSwitchBetterPlanet();
-				} else {
-					SwitchNextZone();
-				}
 			}
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -203,9 +227,15 @@ var INJECT_wait_for_end = function(time_remaining) {
 }
 
 // Send the call to end a round, and restart if needed.
-var INJECT_end_round = function() {
+var INJECT_end_round = function(attempt_no) {
+	if(attempt_no === undefined)
+		attempt_no = 0;
+
 	// Grab the max score we're allowed to send
 	var score = get_max_score();
+
+	// Update gui
+	gui.updateTask("Ending Round");
 
 	// Post our "Yay we beat the level" call
 	$J.ajax({
@@ -214,12 +244,12 @@ var INJECT_end_round = function() {
 		data: { access_token: access_token, score: score, language: language },
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
-				if (current_retry < max_retry) {
-					gui.updateTask("Empty Response. Waiting 5s and trying again.", true);
-					current_timeout = setTimeout(function() { INJECT_end_round(); }, 5000);
-					current_retry++;
+				if (attempt_no < max_retry) {
+					console.log("Error getting zone response:",data);
+					gui.updateTask("Waiting 5s and re-sending score(Attempt #" + attempt_no + ").");
+					setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
 				} else {
-					current_retry = 0;
+					attempt_no = 0;
 					if (auto_switch_planet.active == true) {
 						CheckSwitchBetterPlanet();
 					} else {
@@ -275,7 +305,12 @@ var INJECT_leave_round = function() {
 
 	// Clear the current game ID var
 	current_game_id = undefined;
-	gui.updateStatus(0);
+
+	// Update the GUI
+	gui.updateTask("Left Zone #" + target_zone);
+	gui.updateStatus(false);
+
+	target_zone = -1;
 }
 
 // returns 0 for easy, 1 for medium, 2 for hard
@@ -320,7 +355,7 @@ var INJECT_update_grid = function() {
 }
 
 // Leave the current planet
-var INJECT_leave_planet = function() {
+var INJECT_auto_leave_planet = function() {
 	if(current_planet_id === undefined)
 		return;
 
@@ -343,7 +378,7 @@ var INJECT_leave_planet = function() {
 }
 
 // Join a planet
-var INJECT_join_planet = function(planet_id, access_token) {
+var INJECT_auto_join_planet = function(planet_id, access_token) {
 
 	console.log("Joining planet: " + planet_id);
 
@@ -384,7 +419,7 @@ function GetBestZone() {
 	var bestZoneIdx;
 	var highestDifficulty = -1;
 
-	gui.updateStatus('Getting best zone');
+	gui.updateTask('Getting best zone');
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
@@ -408,7 +443,7 @@ function GetBestZone() {
 	}
 
 	if(bestZoneIdx !== undefined) {
-			console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZoneIdx} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.difficulty}`);
+		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZoneIdx} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.difficulty}`);
 	}
 
 	return bestZoneIdx;
@@ -469,17 +504,19 @@ function GetBestPlanet() {
 
 // Switch to the next zone when one is completed
 function SwitchNextZone() {
+	if(attempt_no === undefined)
+		attempt_no = 0;
 	INJECT_update_grid();
 	var next_zone = GetBestZone();
 	if (next_zone !== undefined) {
 		if (next_zone != target_zone) {
 			INJECT_leave_round();
-			console.log("Zone #" + target_zone + " has ended. Trying #" + next_zone);
+			console.log("Found Best Zone: " + next_zone);
 			target_zone = next_zone;
 		} else {
 			console.log("Current zone #" + target_zone + " is already the best. No switch.");
 		}
-		INJECT_start_round(target_zone, access_token);
+		INJECT_start_round(target_zone, access_token, attempt_no);
 	} else {
 		if (auto_switch_planet.active == true) {
 			console.log("There's no more zone, the planet must be completed. Searching a new one.");
@@ -499,9 +536,9 @@ function CheckSwitchBetterPlanet() {
 	if (best_planet !== undefined && best_planet !== null && best_planet !== current_planet_id) {
 		INJECT_leave_round();
 		console.log("Planet #" + best_planet + " has higher XP potentiel. Switching to it. Bye planet #" + current_planet_id);
-		INJECT_leave_planet();
+		INJECT_auto_leave_planet();
 		current_planet_id = best_planet;
-		INJECT_join_planet(best_planet, access_token);
+		INJECT_auto_join_planet(best_planet, access_token);
 		target_zone = GetBestZone();
 		INJECT_start_round(target_zone, access_token);
 	} else if (best_planet == current_planet_id) {
@@ -514,27 +551,161 @@ function CheckSwitchBetterPlanet() {
 	}
 }
 
+// Leave the planet
+var INJECT_leave_planet = function() {
+	function wait_for_state_load() {
+		if(gGame.m_IsStateLoading || gGame.m_State instanceof CBattleSelectionState)
+			setTimeout(function() { wait_for_state_load(); }, 50);
+		else
+			INJECT_init();
+	}
+
+	// Leave our current round if we haven't.
+	INJECT_leave_round();
+
+	// (Modified) Default Code
+	gAudioManager.PlaySound( 'ui_select_backwards' );
+	gServer.LeaveGameInstance(
+		gGame.m_State.m_PlanetData.id,
+		function() {
+			gGame.ChangeState( new CPlanetSelectionState() );
+			// Wait for the new state to load, then hook in
+			wait_for_state_load();
+		}
+	);
+}
+
+var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
+	function wait_for_state_load() {
+		if(gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState)
+			setTimeout(function() { wait_for_state_load(); }, 50);
+		else
+			INJECT_init();
+	}
+
+	// Modified Default code
+	var rgParams = {
+		id: planet_id,
+		access_token: access_token
+	};
+
+	$J.ajax({
+		url: window.gServer.m_WebAPI.BuildURL( 'ITerritoryControlMinigameService', 'JoinPlanet', true ),
+		method: 'POST',
+		data: rgParams
+	}).success( function( results, textStatus, request ) {
+		if ( request.getResponseHeader( 'x-eresult' ) == 1 ) {
+			success_callback( results );
+			// Wait for the new state to load, then hook in
+			wait_for_state_load();
+		}
+		else {
+			console.log(results, textStatus, request);
+			error_callback();
+		}
+	}).fail( error_callback );
+}
+var INJECT_init_battle_selection = function() {
+	gui.updateStatus(true);
+	gui.updateTask("Initializing Battle Selection Menu.");
+	// Auto join best zone at first
+	if (auto_first_join == true) {
+		firstJoin();
+		function firstJoin() {
+			// Wait for state & access_token
+			if(access_token === undefined || gGame === undefined || gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState) {
+				setTimeout(function() { firstJoin(); }, 100);
+				console.log("waiting");
+				return;
+			}
+
+			current_planet_id = window.gGame.m_State.m_PlanetData.id;
+
+			var first_zone;
+			if(target_zone === -1)
+				first_zone = GetBestZone();
+			else
+				first_zone = target_zone
+
+			if(access_token === undefined)
+				INJECT_get_access_token();
+
+			INJECT_start_round(first_zone, access_token);
+		}
+	}
+
+	// Overwrite join function so clicking on a grid square will run our code instead
+	gServer.JoinZone = function (zone_id, callback, error_callback) {
+		current_planet_id = window.gGame.m_State.m_PlanetData.id;
+		INJECT_start_round(zone_id, access_token);
+	}
+
+	// Hook the Grid click function
+	var grid_click_default = gGame.m_State.m_Grid.click;
+	gGame.m_State.m_Grid.click = function(tileX, tileY) {
+		// Get the selected zone ID
+		var zoneIdx = _GetTileIdx( tileX, tileY );
+
+		// Return if it's the current zone (Don't want clicking on same zone to leave/rejoin)
+		if(target_zone === zoneIdx)
+			return;
+
+		// Return if it's a completed zone
+		if(window.gGame.m_State.m_Grid.m_Tiles[zoneIdx].Info.captured) {
+			console.log("Manually selected zone already captured. Returning.");
+			return;
+		}
+
+		// Update the GUI
+		gui.updateTask("Attempting manual switch to Zone #" + zoneIdx);
+
+		// Leave existing round
+		INJECT_leave_round();
+
+		// Join new round
+		INJECT_start_round(zoneIdx, access_token);
+	}
+
+	// Hook the Leave Planet Button
+	gGame.m_State.m_LeaveButton.click = function(btn) {
+		INJECT_leave_planet();
+	};
+}
+
+var INJECT_init_planet_selection = function() {
+	gui.updateStatus(true);
+	gui.updateTask("Initializing Planet Selection Menu.");
+
+	// Hook the Join Planet Function
+	gServer.JoinPlanet = function(planet_id, success_callback, error_callback) {
+		INJECT_join_planet(planet_id, success_callback, error_callback);
+	}
+
+	// Update GUI
+	gui.updateStatus(false);
+	gui.updateTask("At Planet Selection");
+	gui.updateZone("None");
+};
+
+var INJECT_init = function() {
+	if (gGame.m_State instanceof CBattleSelectionState)
+		INJECT_init_battle_selection();
+	else if (gGame.m_State instanceof CPlanetSelectionState)
+		INJECT_init_planet_selection();
+};
+
+var INJECT_disable_animations = function() {
+	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Continue?");
+
+	if(confirmed) {
+		requestAnimationFrame = function(){};
+		$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
+	}
+};
+
+// ============= CODE THAT AUTORUNS ON LOAD =============
 // Auto-grab the access token
 INJECT_get_access_token();
 
-// Auto join best zone at first
-if (auto_first_join == true) {
-	var delayingStart = setTimeout(firstJoin, 3000);
-	function firstJoin() {
-		clearTimeout(delayingStart);
-		current_planet_id = window.gGame.m_State.m_PlanetData.id;
-		if(target_zone === -1)
-			target_zone = GetBestZone();
-		INJECT_start_round(target_zone, access_token);
-	}
-}
-
-// Disable the game animations to minimize browser CPU usage
-requestAnimationFrame = function(){}
-
-// Overwrite join function so clicking on a grid square will run our code instead
-gServer.JoinZone = function (zone_id, callback, error_callback) {
-	current_planet_id = window.gGame.m_State.m_PlanetData.id;
-	target_zone = zone_id;
-	INJECT_start_round(zone_id, access_token);
-}
+// Run the global initializer, which will call the function for whichever screen you're in
+INJECT_init();

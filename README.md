@@ -10,13 +10,15 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 * Fast switching between zones.
 * Will automatically send the maximum score allowed for each zone difficulty.
 * Automatically restarts runs after completion.
-* Disables game animations to minimize game resource usage.
+* Optionally disables game animations to minimize game resource usage.
 * Status GUI to update level, experience, time remaining in round, etc
+* Allows manual override of zone selection
+* Allows quick-switching of planets
 
 ### How to Run
 **Currently tested on Chrome, Firefox and Safari. The following guide is for Chrome:**
 
-1. Open the Salien Game in a new tab and select a planet.
+1. Open the Salien Game in a new tab and open the planet or battle selector map.
 2. Bring up the JavaScript Console
    1. Windows: F12 or CTRL+Shift+J
    1. Mac: Command+Option+J
@@ -28,7 +30,8 @@ Note: The script may also be setup on userscript managers such as Greasemonkey/T
 ### TO DO
 * Put more info in the GUI (Current target, zone info, etc. Maybe a progress bar for timer?)
 * Potentially highlight selected zones on the grid?
-* Handle planet-switching elegantly.
+* Auto-switch between planets
+* Smarter optimizations of resource usage
 * I have a feeling the game will evolve over time, so handle things as they come.
 * Any other cool features, with support from viewers like you!
 
