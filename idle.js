@@ -176,7 +176,6 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 				// Set target
 				target_zone = zone;
 
-				// Update the GUI
 				if (auto_switch_planet.active == true) {
 					if (auto_switch_planet.current_difficulty != data.response.zone_info.difficulty)
 						auto_switch_planet.current_round = 0; // Difficulty changed, reset rounds counter before new planet check
@@ -190,7 +189,9 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 						}
 					}
 				}
-        gui.updateStatus(true);
+				
+				// Update the GUI
+        		gui.updateStatus(true);
 				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
 				gui.updateEstimatedTime(calculateTimeToNextLevel());
         
