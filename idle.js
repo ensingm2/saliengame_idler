@@ -50,7 +50,7 @@ class BotGUI {
 	}
 
 	updateTask(status, log_to_console) {
-		if(log_to_console)
+		if(log_to_console || log_to_console === undefined)
 			console.log(status);
 		document.getElementById('salienbot_task').innerText = status;
 	}
@@ -107,6 +107,7 @@ function calculateTimeToNextLevel() {
 // Grab the user's access token
 var INJECT_get_access_token = function() {
 	$J.ajax({
+		async: false,
 		type: "GET",
 		url: "https://steamcommunity.com/saliengame/gettoken",
 		success: function(data) {
@@ -273,7 +274,12 @@ var INJECT_leave_round = function() {
 
 	// Clear the current game ID var
 	current_game_id = undefined;
+
+	// Update the GUI
+	gui.updateTask("Left Zone #" + target_zone);
 	gui.updateStatus(false);
+
+	target_zone = -1;
 }
 
 // returns 0 for easy, 1 for medium, 2 for hard
@@ -382,57 +388,152 @@ function SwitchNextZone(attempt_no) {
 	}
 }
 
+// Leave the planet
+var INJECT_leave_planet = function() {
+	function wait_for_state_load() {
+		if(gGame.m_IsStateLoading || gGame.m_State instanceof CBattleSelectionState)
+			setTimeout(function() { wait_for_state_load(); }, 50);
+		else
+			INJECT_init();
+	}
+
+	// Leave our current round if we haven't.
+	INJECT_leave_round();
+
+	// (Modified) Default Code
+	gAudioManager.PlaySound( 'ui_select_backwards' );
+	gServer.LeaveGameInstance(
+		gGame.m_State.m_PlanetData.id,
+		function() {
+			gGame.ChangeState( new CPlanetSelectionState() );
+			// Wait for the new state to load, then hook in
+			wait_for_state_load();
+		}
+	);
+}
+
+var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
+	function wait_for_state_load() {
+		if(gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState)
+			setTimeout(function() { wait_for_state_load(); }, 50);
+		else
+			INJECT_init();
+	}
+
+	// Modified Default code
+	var rgParams = {
+		id: planet_id,
+		access_token: access_token
+	};
+
+	$J.ajax({
+		url: window.gServer.m_WebAPI.BuildURL( 'ITerritoryControlMinigameService', 'JoinPlanet', true ),
+		method: 'POST',
+		data: rgParams
+	}).success( function( results, textStatus, request ) {
+		if ( request.getResponseHeader( 'x-eresult' ) == 1 ) {
+			success_callback( results );
+			// Wait for the new state to load, then hook in
+			wait_for_state_load();
+		}
+		else {
+			console.log(results, textStatus, request);
+			error_callback();
+		}
+	}).fail( error_callback );
+}
+var INJECT_init_battle_selection = function() {
+	gui.updateStatus(true);
+	gui.updateTask("Initializing Battle Selection Menu.");
+	// Auto join best zone at first
+	if (auto_first_join == true) {
+		firstJoin();
+		function firstJoin() {
+			// Wait for state & access_token
+			if(access_token === undefined || gGame === undefined || gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState) {
+				setTimeout(function() { firstJoin(); }, 100);
+				console.log("waiting");
+				return;
+			}
+
+			current_planet_id = window.gGame.m_State.m_PlanetData.id;
+
+			var first_zone;
+			if(target_zone === -1)
+				first_zone = GetBestZone();
+			else
+				first_zone = target_zone
+
+			if(access_token === undefined)
+				INJECT_get_access_token();
+
+			INJECT_start_round(first_zone, access_token);
+		}
+	}
+
+	// Overwrite join function so clicking on a grid square will run our code instead
+	gServer.JoinZone = function (zone_id, callback, error_callback) {
+		current_planet_id = window.gGame.m_State.m_PlanetData.id;
+		INJECT_start_round(zone_id, access_token);
+	}
+
+	// Hook the Grid click function
+	var grid_click_default = gGame.m_State.m_Grid.click;
+	gGame.m_State.m_Grid.click = function(tileX, tileY) {
+		// Get the selected zone ID
+		var zoneIdx = _GetTileIdx( tileX, tileY );
+
+		// Return if it's the current zone (Don't want clicking on same zone to leave/rejoin)
+		if(target_zone === zoneIdx)
+			return;
+
+		// Return if it's a completed zone
+		if(window.gGame.m_State.m_Grid.m_Tiles[zoneIdx].Info.captured) {
+			console.log("Manually selected zone already captured. Returning.");
+			return;
+		}
+
+		// Update the GUI
+		gui.updateTask("Attempting manual switch to Zone #" + zoneIdx);
+
+		// Leave existing round
+		INJECT_leave_round();
+
+		// Join new round
+		INJECT_start_round(zoneIdx, access_token);
+	}
+
+	// Hook the Leave Planet Button
+	gGame.m_State.m_LeaveButton.click = function(btn) {
+		INJECT_leave_planet();
+	};
+}
+
+var INJECT_init_planet_selection = function() {
+	gui.updateStatus(true);
+	gui.updateTask("Initializing Planet Selection Menu.");
+
+	// Hook the Join Planet Function
+	gServer.JoinPlanet = function(planet_id, success_callback, error_callback) {
+		INJECT_join_planet(planet_id, success_callback, error_callback);
+	}
+
+	// Update GUI
+	gui.updateStatus(false);
+	gui.updateTask("At Planet Selection");
+	gui.updateZone("None");
+};
+
+var INJECT_init = function() {
+	if (gGame.m_State instanceof CBattleSelectionState)
+		INJECT_init_battle_selection();
+	else if (gGame.m_State instanceof CPlanetSelectionState)
+		INJECT_init_planet_selection();
+}
+
+// ============= CODE THAT AUTORUNS ON LOAD =============
 // Auto-grab the access token
 INJECT_get_access_token();
 
-// Auto join best zone at first
-if (auto_first_join == true) {
-	var delayingStart = setTimeout(firstJoin, 3000);
-	function firstJoin() {
-		clearTimeout(delayingStart);
-		current_planet_id = window.gGame.m_State.m_PlanetData.id;
-
-		var first_zone;
-		if(target_zone === -1)
-			first_zone = GetBestZone();
-		else
-			first_zone = target_zone
-
-		INJECT_start_round(first_zone, access_token);
-	}
-}
-
-// Disable the game animations to minimize browser CPU usage
-//requestAnimationFrame = function(){}
-
-// Overwrite join function so clicking on a grid square will run our code instead
-gServer.JoinZone = function (zone_id, callback, error_callback) {
-	current_planet_id = window.gGame.m_State.m_PlanetData.id;
-	INJECT_start_round(zone_id, access_token);
-}
-
-// Hook the Grid click function
-var grid_click_default = gGame.m_State.m_Grid.click;
-gGame.m_State.m_Grid.click = function(tileX, tileY) {
-	// Get the selected zone ID
-	var zoneIdx = _GetTileIdx( tileX, tileY );
-
-	// Return if it's the current zone (Don't want clicking on same zone to leave/rejoin)
-	if(target_zone === zoneIdx)
-		return;
-
-	// Return if it's a completed zone
-	if(window.gGame.m_State.m_Grid.m_Tiles[zoneIdx].Info.captured) {
-		console.log("Manually selected zone already captured. Returning.");
-		return;
-	}
-
-	// Update the GUI
-	gui.updateTask("Attempting manual switch to Zone #" + zoneIdx);
-
-	// Leave existing round
-	INJECT_leave_round();
-
-	// Join new round
-	INJECT_start_round(zoneIdx, access_token);
-}
+// Run the global initializer, which will call the function for whichever screen you're in
+INJECT_init();
