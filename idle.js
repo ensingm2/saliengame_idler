@@ -13,6 +13,7 @@ var current_timeout = undefined;
 var max_retry = 5; // Max number of retries to send requests
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
+var current_game_start = undefined; // Timestamp for when the current game started
 
 class BotGUI {
 	constructor(state) {
@@ -166,6 +167,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 				gui.updateEstimatedTime(calculateTimeToNextLevel())
 
 				current_game_id = data.response.zone_info.gameid;
+				current_game_start = new Date().getTime();
 				INJECT_wait_for_end(resend_frequency);
 			}
 		},
@@ -182,7 +184,8 @@ var INJECT_wait_for_end = function(time_remaining) {
 	// Wait
 	var wait_time;
 	var callback;
-	if(time_remaining <= update_length) {
+	// use absolute timestamps to calculate if the game is over, since setTimeout timings are not always reliable
+	if(current_game_start + 1000 * real_round_length < new Date().getTime()) {
 		wait_time = time_remaining*1000;
 		callback = function() { INJECT_end_round(); };
 	}
