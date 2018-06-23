@@ -33,10 +33,10 @@ class BotGUI {
 			'<div id="salienbot_gui" style="background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; margin: 15px; width: 300px; transform: translate(0, 0);">',
 				'<h1><a href="https://github.com/ensingm2/saliengame_idler/">Salien Game Idler</a></h1>',
 				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
-				'<p>Task: <span id="salienbot_task">Initializing</span></p>', // Current task
-				`<p>Target Zone: <span id="salienbot_zone">None</span></p>`,
-				'<p>Level: <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; EXP: <span id="salienbot_exp">' + this.state.exp + '</span></p>',
-				'<p>Est. TimeToLVL: <span id="salienbot_esttimlvl"></span></p>',
+				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
+				`<p><b>Target Zone:</b> <span id="salienbot_zone">None</span></p>`,
+				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + '</span></p>',
+				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
 			'</div>'
 		].join(''))
 
