@@ -138,9 +138,12 @@ var INJECT_start_round = function(zone, access_token) {
 			if (data.response.zone_info !== undefined) {
 				// Update the GUI
 				window.gui.updateZone(zone, data.response.zone_info.capture_progress);
+				gui.updateStatus(true);
+
 				current_game_id = data.response.zone_info.gameid;
 				INJECT_wait_for_end(resend_frequency);
 			} else {
+				console.log("Error getting zone response:",data);
 				SwitchNextZone();
 			}
 		},
@@ -242,7 +245,7 @@ var INJECT_leave_round = function() {
 
 	// Clear the current game ID var
 	current_game_id = undefined;
-	gui.updateStatus(0);
+	gui.updateStatus(false);
 }
 
 // returns 0 for easy, 1 for medium, 2 for hard
@@ -304,7 +307,7 @@ function GetBestZone() {
 	var bestZoneIdx;
 	var highestDifficulty = -1;
 
-	gui.updateStatus('Getting best zone');
+	gui.updateTask('Getting best zone');
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
