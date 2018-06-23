@@ -447,7 +447,7 @@ function GetBestPlanet() {
 			success: function(data) {
 				data.response.planets[0].zones.forEach( function ( zone ) {
 					if (zone.difficulty >= 1 && zone.difficulty <= 3 && zone.captured == false)
-						activePlanetsScore[planet_id] += Math.round(auto_switch_planet["coeffScore"][zone.difficulty] * (1 - capture_progress));
+						activePlanetsScore[planet_id] += Math.round(auto_switch_planet["coeffScore"][zone.difficulty] * (1 - zone.capture_progress));
 				});
 			}
 		});
