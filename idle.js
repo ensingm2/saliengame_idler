@@ -101,9 +101,9 @@ function calculateTimeToNextLevel() {
 	const nextScoreAmount = get_max_score(target_zone);
 	if(time_passed_ms === undefined)
 		time_passed_ms = 0;
-	var missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount - time_passed_ms / 100;
+	var missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount;
 	const roundTime = resend_frequency + update_length;
-	const secondsLeft = missingExp / nextScoreAmount * roundTime;
+	const secondsLeft = missingExp / nextScoreAmount * roundTime - time_passed_ms / 1000;
 
 	return secondsLeft;
 }
