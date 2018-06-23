@@ -101,11 +101,11 @@ function calculateTimeToNextLevel() {
 	const nextScoreAmount = get_max_score(target_zone);
 	if(time_passed_ms === undefined)
 		time_passed_ms = 0;
-	const missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount - time_passed_ms / 1000;
+	var missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount - time_passed_ms / 100;
 	const roundTime = resend_frequency + update_length;
 	const secondsLeft = missingExp / nextScoreAmount * roundTime;
 
-	gui.updateEstimatedTime(secondsLeft);
+	return secondsLeft;
 }
 
 // Grab the user's access token
@@ -166,7 +166,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 				// Update the GUI
 				gui.updateStatus(true);
 				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
-				calculateTimeToNextLevel()
+				gui.updateEstimatedTime(calculateTimeToNextLevel());
 
 				current_game_id = data.response.zone_info.gameid;
 				current_game_start = new Date().getTime();
@@ -186,7 +186,7 @@ var INJECT_wait_for_end = function() {
 	var time_remaining_ms = (resend_frequency*1000) - time_passed_ms;
 	var time_remaining = Math.round(time_remaining_ms/1000);
 	gui.updateTask("Waiting " + time_remaining + "s for round to end", false);
-	calculateTimeToNextLevel()
+	gui.updateEstimatedTime(calculateTimeToNextLevel());
 	
 	// Wait
 	var wait_time = update_length*1000;;
@@ -241,7 +241,7 @@ var INJECT_end_round = function(attempt_no) {
 				gui.updateLevel(data.response.new_level);
 				gui.updateExp(data.response.new_score);
 				// When we get a new EXP we also want to recalculate the time for next level.
-				calculateTimeToNextLevel()
+				gui.updateEstimatedTime(calculateTimeToNextLevel());
 
 				// Update the player info in the UI
 				INJECT_update_player_info();
