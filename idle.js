@@ -35,6 +35,7 @@ class BotGUI {
 				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
 				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
 				`<p><b>Target Zone:</b> <span id="salienbot_zone">None</span></p>`,
+				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span></p>`,
 				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
 			'</div>'
@@ -73,12 +74,19 @@ class BotGUI {
 		document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
 	}
 
-	updateZone(zone, progress) {
+	updateZone(zone, progress, difficulty) {
 		var printString = zone;
 		if(progress !== undefined)
 			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
+		if(progress === undefined) {
+			$J("#salienbot_zone_difficulty_div").hide();
+			difficulty = "";
+		}
+		else
+			$J("#salienbot_zone_difficulty_div").show();
 
 		document.getElementById('salienbot_zone').innerText = printString;
+		document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
 	}
 };
 
@@ -132,15 +140,15 @@ var INJECT_start_round = function(zone, access_token) {
 		url: "https://community.steam-api.com/ITerritoryControlMinigameService/JoinZone/v0001/",
 		data: { access_token: access_token, zone_position: zone },
 		success: function(data) {
-			console.log("Round successfully started in zone #" + zone);
-			console.log(data);
-
 			if (data.response.zone_info !== undefined) {
+				console.log("Round successfully started in zone #" + zone);
+				console.log(data);
+
 				// Set target
 				target_zone = zone;
 
 				// Update the GUI
-				window.gui.updateZone(zone, data.response.zone_info.capture_progress);
+				window.gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
 				gui.updateStatus(true);
 
 				current_game_id = data.response.zone_info.gameid;
@@ -334,7 +342,7 @@ function GetBestZone() {
 	}
 
 	if(bestZoneIdx !== undefined) {
-			console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZoneIdx} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.difficulty}`);
+		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZoneIdx} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.difficulty}`);
 	}
 
 	return bestZoneIdx;
