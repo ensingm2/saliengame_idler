@@ -2,8 +2,8 @@
 var target_zone = -1;
 
 // Variables. Don't change these unless you know what you're doing.
-var max_scores = [600, 1200, 2400] // Max scores for each difficulty (easy, medium, hard)
-var round_length = 110; // Round Length (In Seconds)
+var real_round_length = 120; // Round Length of a real game (In Seconds, for calculating score)
+var resend_frequency = 110; // Frequency at which we can say we finished a round (May be different than real length)
 var update_length = 1; // How long to wait between updates (In Seconds)
 var loop_rounds = true;
 var language = "english"; // Used when POSTing scores
@@ -89,8 +89,8 @@ var gui = new BotGUI({
 
 function calculateTimeToNextLevel() {
 	const missingExp = gPlayerInfo.next_level_score - gPlayerInfo.score;
-	const nextScoreAmount = max_scores[INJECT_get_difficulty(target_zone)];
-	const roundTime = round_length + update_length;
+	const nextScoreAmount = get_max_score(target_zone);
+	const roundTime = resend_frequency + update_length;
 
 	const secondsLeft = missingExp / nextScoreAmount * roundTime;
 
@@ -139,7 +139,7 @@ var INJECT_start_round = function(zone, access_token) {
 				// Update the GUI
 				window.gui.updateZone(zone, data.response.zone_info.capture_progress);
 				current_game_id = data.response.zone_info.gameid;
-				INJECT_wait_for_end(round_length);
+				INJECT_wait_for_end(resend_frequency);
 			} else {
 				SwitchNextZone();
 			}
@@ -176,7 +176,7 @@ var INJECT_wait_for_end = function(time_remaining) {
 // Send the call to end a round, and restart if needed.
 var INJECT_end_round = function() {
 	// Grab the max score we're allowed to send
-	var score = max_scores[INJECT_get_difficulty(target_zone)];
+	var score = get_max_score();
 
 	// Post our "Yay we beat the level" call
 	$J.ajax({
@@ -247,7 +247,7 @@ var INJECT_leave_round = function() {
 
 // returns 0 for easy, 1 for medium, 2 for hard
 var INJECT_get_difficulty = function(zone_id) {
-	return window.gGame.m_State.m_PlanetData.zones[zone_id].difficulty - 1;
+	return window.gGame.m_State.m_PlanetData.zones[zone_id].difficulty;
 }
 
 // Updates the player info
@@ -283,6 +283,20 @@ var INJECT_update_grid = function() {
 			console.log("Successfully updated map data on planet: " + current_planet_id);
 		}
 	});
+}
+
+// Defaults to max score of current zone & full round duration if no params are given
+function get_max_score(zone, round_duration) {
+	// defaults
+	if(zone === undefined)
+		zone = target_zone;
+	if(round_duration === undefined)
+		round_duration = real_round_length;
+
+	var difficulty = INJECT_get_difficulty(zone);
+	var score = 5 * round_duration * Math.pow(2, (difficulty-1));
+
+	return score;
 }
 
 // Get the best zone available
