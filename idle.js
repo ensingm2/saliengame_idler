@@ -480,6 +480,7 @@ function SwitchNextZone() {
 			INJECT_start_round(next_zone, access_token);
 		} else {
 			console.log("Current zone #" + target_zone + " is already the best. No switch.");
+			INJECT_start_round(target_zone, access_token);
 		}
 	} else {
 		if (auto_switch_planet.active == true) {
