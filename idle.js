@@ -397,7 +397,7 @@ function SwitchNextZone(attempt_no) {
 		console.log("Found Best Zone: " + next_zone);
 		INJECT_start_round(next_zone, access_token, attempt_no);
 	} else {
-		console.log("There's no more zone, the planet must be completed. You'll need to choose another planet!");
+		console.log("There're no more zones, the planet must be completed. You'll need to choose another planet!");
 		target_zone = -1;
 	}
 }
