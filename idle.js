@@ -1,10 +1,10 @@
-// This is the zone you want to attack.
+// This is the zone you want to attack (Optional, otherwise picks one for you).
 var target_zone = -1;
 
 // Variables. Don't change these unless you know what you're doing.
 var max_scores = [600, 1200, 2400] // Max scores for each difficulty (easy, medium, hard)
-var round_length = 120; // Round Length (In Seconds)
-var update_length = 15; // How long to wait between updates (In Seconds)
+var round_length = 110; // Round Length (In Seconds)
+var update_length = 1; // How long to wait between updates (In Seconds)
 var loop_rounds = true;
 var language = "english"; // Used when POSTing scores
 var access_token = "";
@@ -14,6 +14,88 @@ var max_retry = 3; // Max number of retries to report your score
 var current_retry = 0;
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
+
+class BotGUI {
+	constructor(state) {
+		console.log('GUI Has been created');
+
+		this.state = state;
+		
+		this.createStatusWindow();
+	}
+
+	createStatusWindow() {
+		if(document.getElementById('salienbot_gui')) {
+			return false;
+		}
+
+		var $statusWindow = $J([
+			'<div id="salienbot_gui" style="background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; margin: 15px; width: 300px; transform: translate(0, 0);">',
+				'<h1><a href="https://github.com/ensingm2/saliengame_idler/">Salien Game Idler</a></h1>',
+				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
+				'<p>Task: <span id="salienbot_task">Initializing</span></p>', // Current task
+				`<p>Target Zone: <span id="salienbot_zone">None</span></p>`,
+				'<p>Level: <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; EXP: <span id="salienbot_exp">' + this.state.exp + '</span></p>',
+				'<p>Est. TimeToLVL: <span id="salienbot_esttimlvl"></span></p>',
+			'</div>'
+		].join(''))
+
+		$J('#salien_game_placeholder').append( $statusWindow )
+	}
+
+	updateStatus(running) {
+		const statusTxt = running ? '<span style="color: green;">✓ Running</span>' : '<span style="color: red;">✗ Stopped</span>';
+
+		$J('#salienbot_status').html(statusTxt);
+	}
+
+	updateTask(status, log_to_console) {
+		if(log_to_console)
+			console.log(status);
+		document.getElementById('salienbot_task').innerText = status;
+	}
+
+	updateExp(exp) {
+		document.getElementById('salienbot_exp').innerText = exp;
+	}
+
+	updateLevel(level) {
+		document.getElementById('salienbot_zone').innerText = level;
+	}
+
+	updateEstimatedTime(secondsLeft) {
+		let date = new Date(null);
+		date.setSeconds(secondsLeft);
+		var result = date.toISOString().substr(11, 8);
+
+		var timeTxt = result.replace(/(\d{2}):(\d{2}):(\d{2})/gm, '$1h $2m $3s');
+
+		document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
+	}
+
+	updateZone(zone, progress) {
+		var printString = zone;
+		if(progress !== undefined)
+			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
+
+		document.getElementById('salienbot_zone').innerText = printString;
+	}
+};
+
+var gui = new BotGUI({
+	level: gPlayerInfo.level,
+	exp: gPlayerInfo.score
+});
+
+function calculateTimeToNextLevel() {
+	const missingExp = gPlayerInfo.next_level_score - gPlayerInfo.score;
+	const nextScoreAmount = max_scores[INJECT_get_difficulty(target_zone)];
+	const roundTime = round_length + update_length;
+
+	const secondsLeft = missingExp / nextScoreAmount * roundTime;
+
+	return secondsLeft;
+}
 
 // Grab the user's access token
 var INJECT_get_access_token = function() {
@@ -37,9 +119,12 @@ var INJECT_get_access_token = function() {
 var INJECT_start_round = function(zone, access_token) {
 	// Leave the game if we're already in one.
 	if(current_game_id !== undefined) {
-		console.log("Previous game detected. Ending it.");
+		gui.updateTask("Previous game detected. Ending it.", true);
 		INJECT_leave_round();
 	}
+
+	// Update the estimate
+	gui.updateEstimatedTime(calculateTimeToNextLevel())
 
 	// Send the POST to join the game.
 	$J.ajax({
@@ -49,11 +134,15 @@ var INJECT_start_round = function(zone, access_token) {
 		success: function(data) {
 			console.log("Round successfully started in zone #" + zone);
 			console.log(data);
+
+			// Update the GUI
+			window.gui.updateZone(zone, data.response.zone_info.capture_progress);
+
 			if (data.response.zone_info !== undefined) {
 				current_game_id = data.response.zone_info.gameid;
 				INJECT_wait_for_end(round_length);
 			} else {
-					SwitchNextZone();
+				SwitchNextZone();
 			}
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -64,8 +153,7 @@ var INJECT_start_round = function(zone, access_token) {
 
 // Update time remaining, and wait for the round to complete.
 var INJECT_wait_for_end = function(time_remaining) {
-	// Log to console
-	console.log("Time remaining in round: " + time_remaining + "s");
+	gui.updateTask("Waiting " + time_remaining + "s for round to end", false);
 
 	// Wait
 	var wait_time;
@@ -99,7 +187,7 @@ var INJECT_end_round = function() {
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
 				if (current_retry < max_retry) {
-					console.log("Empty Response. Waiting 5s and trying again.")
+					gui.updateTask("Empty Response. Waiting 5s and trying again.", true);
 					current_timeout = setTimeout(function() { INJECT_end_round(); }, 5000);
 					current_retry++;
 				} else {
@@ -112,8 +200,16 @@ var INJECT_end_round = function() {
 				console.log("Level: ", data.response.new_level, "\nEXP:   ", data.response.new_score);
 				console.log(data);
 
+				gui.updateLevel(data.response.new_level);
+				gui.updateExp(data.response.new_score);
+				// When we get a new EXP we also want to recalculate the time for next level.
+				gui.updateEstimatedTime(calculateTimeToNextLevel())
+
 				// Update the player info in the UI
 				INJECT_update_player_info();
+
+				// Update the GUI
+				window.gui.updateZone("None");
 
 				// Restart the round if we have that variable set
 				if(loop_rounds) {
@@ -147,6 +243,7 @@ var INJECT_leave_round = function() {
 
 	// Clear the current game ID var
 	current_game_id = undefined;
+	gui.updateStatus(0);
 }
 
 // returns 0 for easy, 1 for medium, 2 for hard
@@ -170,6 +267,8 @@ var INJECT_update_grid = function() {
 	if(current_planet_id === undefined)
 		return;
 
+	gui.updateTask('Updating grid', true);
+
 	// GET to the endpoint
 	$J.ajax({
 		async: false,
@@ -191,6 +290,8 @@ var INJECT_update_grid = function() {
 function GetBestZone() {
 	var bestZoneIdx;
 	var highestDifficulty = -1;
+
+	gui.updateStatus('Getting best zone');
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
@@ -245,11 +346,14 @@ if (auto_first_join == true) {
 	function firstJoin() {
 		clearTimeout(delayingStart);
 		current_planet_id = window.gGame.m_State.m_PlanetData.id;
-		var first_zone = GetBestZone();
-		target_zone = first_zone;
-		INJECT_start_round(first_zone, access_token);
+		if(target_zone === -1)
+			target_zone = GetBestZone();
+		INJECT_start_round(target_zone, access_token);
 	}
 }
+
+// Disable the game animations to minimize browser CPU usage
+requestAnimationFrame = function(){}
 
 // Overwrite join function so clicking on a grid square will run our code instead
 gServer.JoinZone = function (zone_id, callback, error_callback) {

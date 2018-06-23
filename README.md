@@ -8,15 +8,17 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 * Fast switching between zones.
 * Will automatically send the maximum score allowed (to my knowledge) for each zone difficulty.
 * Automatically restarts runs after completion.
+* Disables game animations to minimize game resource usage.
+* Status GUI to update level, experience, time remaining in round, etc
 
 ### How to Run
-**Currently tested on Chrome, Firefox and Safari. The following guide is for Chrome only**
+**Currently tested on Chrome, Firefox and Safari. The following guide is for Chrome:**
 
-1. Open the Salien Game in a new tab and bring up the JavaScript Console
+1. Open the Salien Game in a new tab and select a planet.
+2. Bring up the JavaScript Console
    1. Windows: F12 or CTRL+Shift+J
    1. Mac: Command+Option+J
-2. Copy the JavaScript code from [idle.js](idle.js) and paste it into the console and press enter
-3. Select a planet and click on a specific tile. The script will now automatically complete the game every 120 seconds
+3. Copy the JavaScript code from [idle.js](idle.js) and paste it into the console and press enter
    1. Output can be seen and tracked in the console
 
 Note: The script may also be setup on userscript managers such as Greasemonkey/Tampermonkey however this is advised against due to security matters.
@@ -24,9 +26,12 @@ Note: The script may also be setup on userscript managers such as Greasemonkey/T
 #### ***THERE IS CURRENTLY NO GRAPHICAL OUTPUT IN THIS VERSION, CHECK THE CONSOLE TO VERIFY IF IT IS WORKING***
 
 ### TO DO
-* Add automated switching of zones when they are completed, prioritize by difficulty for extra points
-* Add some kind of UI to display status
-* Update player information window between runs
+* Improve GUI to be more responsive (increase update freq)
+* Put more info in the GUI (Current target, zone info, etc. Maybe a progress bar for timer?)
+* Potentially highlight selected zones on the grid?
+* Handle planet-switching elegantly.
+* I have a feeling the game will evolve over time, so handle things as they come.
+* Any other cool features, with support from viewers like you!
 
 ### Want to Contribute?
 Feel free. You can submit whatever changes you'd like. Fork, PR, whatever. Go nuts.
