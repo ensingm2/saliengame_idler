@@ -22,6 +22,7 @@ class BotGUI {
 		this.state = state;
 		
 		this.createStatusWindow();
+		this.createProgressBar();
 	}
 
 	createStatusWindow() {
@@ -43,6 +44,12 @@ class BotGUI {
 		].join(''))
 
 		$J('#salien_game_placeholder').append( $statusWindow )
+	}
+
+	createProgressBar() {
+		this.progressbar = new CProgressBar(63);
+		this.progressbar.x = 2
+		this.progressbar.y = 48
 	}
 
 	updateStatus(running) {
@@ -83,8 +90,10 @@ class BotGUI {
 			$J("#salienbot_zone_difficulty_div").hide();
 			difficulty = "";
 		}
-		else
+		else {
 			$J("#salienbot_zone_difficulty_div").show();
+			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar)
+		}
 
 		document.getElementById('salienbot_zone').innerText = printString;
 		document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
@@ -184,6 +193,7 @@ var INJECT_wait_for_end = function() {
 	var time_remaining_ms = (resend_frequency*1000) - time_passed_ms;
 	var time_remaining = Math.round(time_remaining_ms/1000);
 	gui.updateTask("Waiting " + time_remaining + "s for round to end", false);
+	gui.progressbar.SetValue(time_passed_ms/(resend_frequency*1000))
 
 	// Wait
 	var wait_time = update_length*1000;;
@@ -499,6 +509,7 @@ var INJECT_init_battle_selection = function() {
 
 		// Update the GUI
 		gui.updateTask("Attempting manual switch to Zone #" + zoneIdx);
+		gui.progressbar.parent.removeChild(gui.progressbar)
 
 		// Leave existing round
 		INJECT_leave_round();
