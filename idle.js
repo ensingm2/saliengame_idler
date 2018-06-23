@@ -323,7 +323,6 @@ function GetBestZone() {
 
 // Switch to the next zone when one is completed
 function SwitchNextZone() {
-	next_zone = GetBestZone();
 	INJECT_leave_round();
 	INJECT_update_grid();
 	var next_zone = GetBestZone();
