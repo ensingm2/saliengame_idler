@@ -32,46 +32,46 @@ class BotGUI {
 		var $statusWindow = $J([
 			'<div id="salienbot_gui" style="background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; margin: 15px; width: 300px; transform: translate(0, 0);">',
 				'<h1><a href="https://github.com/ensingm2/saliengame_idler/">Salien Game Idler</a></h1>',
-                '<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
-                '<p>Task: <span id="salienbot_task">Initializing</span></p>', // Current task
-                `<p>Target Zone: <span id="salienbot_zone">None</span></p>`,
+				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
+				'<p>Task: <span id="salienbot_task">Initializing</span></p>', // Current task
+				`<p>Target Zone: <span id="salienbot_zone">None</span></p>`,
 				'<p>Level: <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; EXP: <span id="salienbot_exp">' + this.state.exp + '</span></p>',
-                '<p>Est. TimeToLVL: <span id="salienbot_esttimlvl"></span></p>',
+				'<p>Est. TimeToLVL: <span id="salienbot_esttimlvl"></span></p>',
 			'</div>'
 		].join(''))
 
 		$J('#salien_game_placeholder').append( $statusWindow )
 	}
-	
+
 	updateStatus(running) {
-        const statusTxt = running ? '<span style="color: green;">✓ Running</span>' : '<span style="color: red;">✗ Stopped</span>';
+		const statusTxt = running ? '<span style="color: green;">✓ Running</span>' : '<span style="color: red;">✗ Stopped</span>';
 
 		$J('#salienbot_status').html(statusTxt);
-    }
-    
-    updateTask(status, log_to_console) {
-    	if(log_to_console)
-        	console.log(status);
+	}
+
+	updateTask(status, log_to_console) {
+		if(log_to_console)
+			console.log(status);
 		document.getElementById('salienbot_task').innerText = status;
 	}
 
 	updateExp(exp) {
 		document.getElementById('salienbot_exp').innerText = exp;
 	}
-	
+
 	updateLevel(level) {
 		document.getElementById('salienbot_zone').innerText = level;
-    }
-    
-    updateEstimatedTime(secondsLeft) {
-        let date = new Date(null);
-        date.setSeconds(secondsLeft);
-        var result = date.toISOString().substr(11, 8);
-    
-        var timeTxt = result.replace(/(\d{2}):(\d{2}):(\d{2})/gm, '$1h $2m $3s');
+	}
 
-        document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
-    }
+	updateEstimatedTime(secondsLeft) {
+		let date = new Date(null);
+		date.setSeconds(secondsLeft);
+		var result = date.toISOString().substr(11, 8);
+
+		var timeTxt = result.replace(/(\d{2}):(\d{2}):(\d{2})/gm, '$1h $2m $3s');
+
+		document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
+	}
 
 	updateZone(zone, progress) {
 		var printString = zone;
@@ -79,7 +79,7 @@ class BotGUI {
 			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
 
 		document.getElementById('salienbot_zone').innerText = printString;
-    }
+	}
 };
 
 var gui = new BotGUI({
@@ -88,13 +88,13 @@ var gui = new BotGUI({
 });
 
 function calculateTimeToNextLevel() {
-    const missingExp = gPlayerInfo.next_level_score - gPlayerInfo.score;
-    const nextScoreAmount = max_scores[INJECT_get_difficulty(target_zone)];
-    const roundTime = round_length + update_length;
+	const missingExp = gPlayerInfo.next_level_score - gPlayerInfo.score;
+	const nextScoreAmount = max_scores[INJECT_get_difficulty(target_zone)];
+	const roundTime = round_length + update_length;
 
-    const secondsLeft = missingExp / nextScoreAmount * roundTime;
+	const secondsLeft = missingExp / nextScoreAmount * roundTime;
 
-    return secondsLeft;
+	return secondsLeft;
 }
 
 // Grab the user's access token
@@ -119,12 +119,12 @@ var INJECT_get_access_token = function() {
 var INJECT_start_round = function(zone, access_token) {
 	// Leave the game if we're already in one.
 	if(current_game_id !== undefined) {
-        gui.updateTask("Previous game detected. Ending it.", true);
+		gui.updateTask("Previous game detected. Ending it.", true);
 		INJECT_leave_round();
-    }
-    
-    // Update the estimate
-    gui.updateEstimatedTime(calculateTimeToNextLevel())
+	}
+
+	// Update the estimate
+	gui.updateEstimatedTime(calculateTimeToNextLevel())
 
 	// Send the POST to join the game.
 	$J.ajax({
@@ -142,7 +142,7 @@ var INJECT_start_round = function(zone, access_token) {
 				current_game_id = data.response.zone_info.gameid;
 				INJECT_wait_for_end(round_length);
 			} else {
-					SwitchNextZone();
+				SwitchNextZone();
 			}
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -153,7 +153,7 @@ var INJECT_start_round = function(zone, access_token) {
 
 // Update time remaining, and wait for the round to complete.
 var INJECT_wait_for_end = function(time_remaining) {
-    gui.updateTask("Waiting " + time_remaining + "s for round to end", false);
+	gui.updateTask("Waiting " + time_remaining + "s for round to end", false);
 
 	// Wait
 	var wait_time;
@@ -187,7 +187,7 @@ var INJECT_end_round = function() {
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
 				if (current_retry < max_retry) {
-                    gui.updateTask("Empty Response. Waiting 5s and trying again.", true);
+					gui.updateTask("Empty Response. Waiting 5s and trying again.", true);
 					current_timeout = setTimeout(function() { INJECT_end_round(); }, 5000);
 					current_retry++;
 				} else {
@@ -198,12 +198,12 @@ var INJECT_end_round = function() {
 			else {
 				console.log("Successfully finished the round and got expected data back:");
 				console.log("Level: ", data.response.new_level, "\nEXP:   ", data.response.new_score);
-                console.log(data);
-                
-                gui.updateLevel(data.response.new_level);
-                gui.updateExp(data.response.new_score);
-                // When we get a new EXP we also want to recalculate the time for next level.
-                gui.updateEstimatedTime(calculateTimeToNextLevel())
+				console.log(data);
+
+				gui.updateLevel(data.response.new_level);
+				gui.updateExp(data.response.new_score);
+				// When we get a new EXP we also want to recalculate the time for next level.
+				gui.updateEstimatedTime(calculateTimeToNextLevel())
 
 				// Update the player info in the UI
 				INJECT_update_player_info();
@@ -242,8 +242,8 @@ var INJECT_leave_round = function() {
 	});
 
 	// Clear the current game ID var
-    current_game_id = undefined;
-    gui.updateStatus(0);
+	current_game_id = undefined;
+	gui.updateStatus(0);
 }
 
 // returns 0 for easy, 1 for medium, 2 for hard
@@ -267,7 +267,7 @@ var INJECT_update_grid = function() {
 	if(current_planet_id === undefined)
 		return;
 
-    gui.updateTask('Updating grid', true);
+	gui.updateTask('Updating grid', true);
 
 	// GET to the endpoint
 	$J.ajax({
