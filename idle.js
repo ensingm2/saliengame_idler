@@ -371,11 +371,28 @@ if (auto_first_join == true) {
 }
 
 // Disable the game animations to minimize browser CPU usage
-requestAnimationFrame = function(){}
+//requestAnimationFrame = function(){}
 
 // Overwrite join function so clicking on a grid square will run our code instead
 gServer.JoinZone = function (zone_id, callback, error_callback) {
 	current_planet_id = window.gGame.m_State.m_PlanetData.id;
 	target_zone = zone_id;
 	INJECT_start_round(zone_id, access_token);
+}
+
+// Hook the Grid click function
+var grid_click_default = gGame.m_State.m_Grid.click;
+gGame.m_State.m_Grid.click = function(tileX, tileY) {
+	// Get the selected zone ID
+	var zoneIdx = _GetTileIdx( tileX, tileY );
+
+	// Return if it's the current zone (Don't want clicking on same zone to leave/rejoin)
+	if(target_zone === zoneIdx)
+		return;
+
+	// Leave existing round
+	INJECT_leave_round();
+
+	// Join new round
+	INJECT_start_round(zoneIdx, access_token);
 }
