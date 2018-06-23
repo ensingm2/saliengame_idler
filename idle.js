@@ -20,7 +20,7 @@ class BotGUI {
 		console.log('GUI Has been created');
 
 		this.state = state;
-		
+
 		this.createStatusWindow();
 	}
 
@@ -91,7 +91,7 @@ class BotGUI {
 	}
 };
 
-var gui = new BotGUI({
+window.gui = new BotGUI({
 	level: gPlayerInfo.level,
 	exp: gPlayerInfo.score
 });
@@ -188,15 +188,15 @@ var INJECT_wait_for_end = function() {
 	// Wait
 	var wait_time = update_length*1000;;
 	var callback;
-	
+
 	// use absolute timestamps to calculate if the game is over, since setTimeout timings are not always reliable
 	if(time_remaining_ms <= 0) {
 		callback = function() { INJECT_end_round(); };
 	}
-	else { 
+	else {
 		callback = function() { INJECT_wait_for_end(); };
 	}
-	
+
 	// Set the timeout
 	current_timeout = setTimeout(callback, wait_time);
 }
@@ -318,8 +318,8 @@ var INJECT_update_grid = function() {
 		success: function(data) {
 			window.gGame.m_State.m_PlanetData = data.response.planets[0];
 			window.gGame.m_State.m_PlanetData.zones.forEach( function ( zone ) {
-				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.progress = zone.capture_progress; 
-				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.captured = zone.captured; 
+				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.progress = zone.capture_progress;
+				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.captured = zone.captured;
 			});
 			console.log("Successfully updated map data on planet: " + current_planet_id);
 		}
@@ -355,14 +355,8 @@ function GetBestZone() {
 				return idx;
 			}
 
-			if(zone.difficulty > highestDifficulty) {
+			if(zone.difficulty >= highestDifficulty) {
 				highestDifficulty = zone.difficulty;
-				maxProgress = zone.progress;
-				bestZoneIdx = idx;
-			} else if(zone.difficulty < highestDifficulty) continue;
-
-			if(zone.progress < maxProgress) {
-				maxProgress = zone.progress;
 				bestZoneIdx = idx;
 			}
 		}
@@ -535,7 +529,7 @@ var INJECT_init = function() {
 		INJECT_init_planet_selection();
 };
 
-var INJECT_disable_animations = function() {
+window.INJECT_disable_animations = function() {
 	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Continue?");
 
 	if(confirmed) {
