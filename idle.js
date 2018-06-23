@@ -136,6 +136,9 @@ var INJECT_start_round = function(zone, access_token) {
 			console.log(data);
 
 			if (data.response.zone_info !== undefined) {
+				// Set target
+				target_zone = zone;
+
 				// Update the GUI
 				window.gui.updateZone(zone, data.response.zone_info.capture_progress);
 				gui.updateStatus(true);
