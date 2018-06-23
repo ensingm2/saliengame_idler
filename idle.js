@@ -344,8 +344,6 @@ var INJECT_leave_planet = function() {
 
 // Join a planet
 var INJECT_join_planet = function(planet_id, access_token) {
-	if(current_planet_id !== undefined)
-		INJECT_leave_planet();
 
 	console.log("Joining planet: " + planet_id);
 
