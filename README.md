@@ -1,12 +1,14 @@
 # Ensingm2 Salien Game Idler
 
+[Link to Saliens Game](https://steamcommunity.com/saliengame/play)
+
 ### Intro
 Hey everyone, Like all of you, I was interested in "streamlining" the process of the 2018 Steam sale 'Salien' minigame. You may or may not remember me as a contributor/dev in the Steam Monster Minigame autoclicking scene from the 2015 Steam sale. I took a look at this year's game, and noticed it's much more... boring. No interactions between other players mean there are only a few interactions with the server, and they can be easily spoofed, as long as you wait out the timer of the round, and only send the maximum allowed score for a zone. So I figured, why automate the game at all? Much easier to just sit at the menu and just say we beat the level.
 
 ### Features
 * Does not need to run the game at all, works from the main map.
 * Fast switching between zones.
-* Will automatically send the maximum score allowed (to my knowledge) for each zone difficulty.
+* Will automatically send the maximum score allowed for each zone difficulty.
 * Automatically restarts runs after completion.
 * Disables game animations to minimize game resource usage.
 * Status GUI to update level, experience, time remaining in round, etc
@@ -21,12 +23,9 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 3. Copy the JavaScript code from [idle.js](idle.js) and paste it into the console and press enter
    1. Output can be seen and tracked in the console
 
-Note: The script may also be setup on userscript managers such as Greasemonkey/Tampermonkey however this is advised against due to security matters.
-
-#### ***THERE IS CURRENTLY NO GRAPHICAL OUTPUT IN THIS VERSION, CHECK THE CONSOLE TO VERIFY IF IT IS WORKING***
+Note: The script may also be setup on userscript managers such as Greasemonkey/Tampermonkey however this is advised against enabling automatic updates for _*any*_ scripts, for your own security.
 
 ### TO DO
-* Improve GUI to be more responsive (increase update freq)
 * Put more info in the GUI (Current target, zone info, etc. Maybe a progress bar for timer?)
 * Potentially highlight selected zones on the grid?
 * Handle planet-switching elegantly.
