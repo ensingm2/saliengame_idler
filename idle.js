@@ -420,6 +420,7 @@ function GetBestPlanet() {
 	var bestPlanetId = undefined;
 	var activePlanetsScore = [];
 	var maxScore = 0;
+	var numberErrors = 0;
 	
 	gui.updateStatus('Getting best planet');
 	
@@ -449,6 +450,9 @@ function GetBestPlanet() {
 					if (zone.difficulty >= 1 && zone.difficulty <= 3 && zone.captured == false)
 						activePlanetsScore[planet_id] += Math.round(auto_switch_planet["coeffScore"][zone.difficulty] * (1 - zone.capture_progress));
 				});
+			},
+			error: function() {
+				numberErrors++;
 			}
 		});
 		if (activePlanetsScore[planet_id] > maxScore) {
@@ -457,6 +461,10 @@ function GetBestPlanet() {
 		}
 	});
 	console.log(activePlanetsScore);
+	// Prevent a planet switch if there were >= 2 errors while fetching planets
+	if (numberErrors >= 2)
+		return current_planet_id;
+	
 	return bestPlanetId;
 }
 
