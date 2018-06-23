@@ -14,7 +14,7 @@ var max_retry = 5; // Max number of retries to send requests
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
 var current_game_start = undefined; // Timestamp for when the current game started
-var time_passed_ms = undefined
+var time_passed_ms = 0
 
 class BotGUI {
 	constructor(state) {
@@ -99,13 +99,11 @@ var gui = new BotGUI({
 
 function calculateTimeToNextLevel() {	
 	const nextScoreAmount = get_max_score(target_zone);
-	if(time_passed_ms === undefined)
-		time_passed_ms = 0;
 	var missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount;
 	const roundTime = resend_frequency + update_length;
 	const secondsLeft = missingExp / nextScoreAmount * roundTime - time_passed_ms / 1000;
 
-	return secondsLeft;
+	gui.updateEstimatedTime(secondsLeft);
 }
 
 // Grab the user's access token
@@ -166,7 +164,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 				// Update the GUI
 				gui.updateStatus(true);
 				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
-				gui.updateEstimatedTime(calculateTimeToNextLevel());
+				calculateTimeToNextLevel();
 
 				current_game_id = data.response.zone_info.gameid;
 				current_game_start = new Date().getTime();
@@ -186,7 +184,7 @@ var INJECT_wait_for_end = function() {
 	var time_remaining_ms = (resend_frequency*1000) - time_passed_ms;
 	var time_remaining = Math.round(time_remaining_ms/1000);
 	gui.updateTask("Waiting " + time_remaining + "s for round to end", false);
-	gui.updateEstimatedTime(calculateTimeToNextLevel());
+	calculateTimeToNextLevel();
 	
 	// Wait
 	var wait_time = update_length*1000;;
@@ -241,7 +239,7 @@ var INJECT_end_round = function(attempt_no) {
 				gui.updateLevel(data.response.new_level);
 				gui.updateExp(data.response.new_score);
 				// When we get a new EXP we also want to recalculate the time for next level.
-				gui.updateEstimatedTime(calculateTimeToNextLevel());
+				calculateTimeToNextLevel();
 
 				// Update the player info in the UI
 				INJECT_update_player_info();
