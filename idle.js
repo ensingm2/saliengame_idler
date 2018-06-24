@@ -88,9 +88,22 @@ class BotGUI {
 	updateEstimatedTime(secondsLeft) {
 		let date = new Date(null);
 		date.setSeconds(secondsLeft);
-		var result = date.toISOString().substr(11, 8);
+		var result = date.toISOString().substr(8, 11).split(/[T:]/);
 
-		var timeTxt = result.replace(/(\d{2}):(\d{2}):(\d{2})/gm, '$1h $2m $3s');
+		var days = result[0]-1;
+		var hours = result[1];
+		var minutes = result[2];
+		var seconds = result[3];
+
+		var timeTxt = "";
+		if(days > 0)
+			timeTxt += days + "d ";
+		if(hours > 0 || timeTxt.length > 0)
+			timeTxt += hours + "h ";
+		if(minutes > 0 || timeTxt.length > 0)
+			timeTxt += minutes + "m ";
+
+		timeTxt += seconds + "s";
 
 		document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
 	}
