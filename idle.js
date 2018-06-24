@@ -20,12 +20,7 @@ var auto_switch_planet = {
 	"current_difficulty": undefined,
 	"wanted_difficulty": 3, // Difficulty prefered. Will check planets if the current one differs
 	"rounds_before_check": 5, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
-	"current_round": 0,
-	"coeffScore": {
-		1: 1,
-		2: 100,
-		3: 10000
-	}
+	"current_round": 0
 };
 
 class BotGUI {
@@ -536,8 +531,8 @@ function GetBestPlanet() {
 			data: { id: planet_id },
 			success: function(data) {
 				data.response.planets[0].zones.forEach( function ( zone ) {
-					if (zone.difficulty >= 1 && zone.difficulty <= 3 && zone.captured == false)
-						activePlanetsScore[planet_id] += Math.ceil(auto_switch_planet["coeffScore"][zone.difficulty] * (1 - zone.capture_progress));
+					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false)
+						activePlanetsScore[planet_id] += Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zone.capture_progress));
 				});
 			},
 			error: function() {
