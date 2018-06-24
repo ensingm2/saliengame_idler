@@ -133,13 +133,11 @@ function ajaxErrorHandling(ajaxObj, params, messagesArray) {
 	ajaxObj.tryCount++;
 	if (ajaxObj.tryCount <= ajaxObj.retryLimit) {
 		var currentTask = "Retrying to " + messagesArray[0] + " (Retry #" + ajaxObj.tryCount + "). Error: " + params.xhr.status + ": " + params.thrownError;
-		console.log(currentTask);
 		gui.updateTask(currentTask);
-		$.ajax(ajaxObj);
+		$J.ajax(ajaxObj);
 		return;
 	}
 	var currentTask = "Error " + messagesArray[1] + ": " + params.xhr.status + ": " + params.thrownError + " (Max retries reached).";
-	console.log(currentTask);
 	gui.updateTask(currentTask);
 	return;
 }
