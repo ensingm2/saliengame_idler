@@ -132,9 +132,9 @@ function calculateTimeToNextLevel() {
 function ajaxErrorHandling(ajaxObj, params, messagesArray) {
 	ajaxObj.tryCount++;
 	if (ajaxObj.tryCount <= ajaxObj.retryLimit) {
-		var currentTask = "Retrying to " + messagesArray[0] + " (Retry #" + ajaxObj.tryCount + "). Error: " + params.xhr.status + ": " + params.thrownError;
+		var currentTask = "Retrying in 5s to " + messagesArray[0] + " (Retry #" + ajaxObj.tryCount + "). Error: " + params.xhr.status + ": " + params.thrownError;
 		gui.updateTask(currentTask);
-		$J.ajax(ajaxObj);
+		setTimeout(function() { $J.ajax(ajaxObj); }, 5000);
 		return;
 	}
 	var currentTask = "Error " + messagesArray[1] + ": " + params.xhr.status + ": " + params.thrownError + " (Max retries reached).";
