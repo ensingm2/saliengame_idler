@@ -160,6 +160,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 
 	// Send the POST to join the game.
 	$J.ajax({
+		async: false,
 		type: "POST",
 		url: "https://community.steam-api.com/ITerritoryControlMinigameService/JoinZone/v0001/",
 		data: { access_token: access_token, zone_position: zone },
@@ -258,6 +259,7 @@ var INJECT_end_round = function(attempt_no) {
 
 	// Post our "Yay we beat the level" call
 	$J.ajax({
+		async: false,
 		type: "POST",
 		url: "https://community.steam-api.com/ITerritoryControlMinigameService/ReportScore/v0001/",
 		data: { access_token: access_token, score: score, language: language },
@@ -628,6 +630,7 @@ var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
 	};
 
 	$J.ajax({
+		async: false,
 		url: window.gServer.m_WebAPI.BuildURL( 'ITerritoryControlMinigameService', 'JoinPlanet', true ),
 		method: 'POST',
 		data: rgParams
