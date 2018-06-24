@@ -3,7 +3,7 @@
 // @namespace    https://github.com/ensingm2/saliengame_idler
 // @version      0.0.1
 // @author       ensingm2
-// @match        *://steamcommunity.com/saliengame/*
+// @match        *://steamcommunity.com/saliengame/play
 // @grant        none
 // @downloadURL  https://raw.githubusercontent.com/ensingm2/saliengame_idler/master/idle.js
 // @updateURL    https://raw.githubusercontent.com/ensingm2/saliengame_idler/master/idle.js
