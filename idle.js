@@ -38,6 +38,8 @@ var auto_switch_planet = {
 		3: 10000
 	}
 };
+var gui; //local gui variable
+var start_button = false; // is start button already pressed?
 
 class BotGUI {
 	constructor(state) {
@@ -124,10 +126,29 @@ class BotGUI {
 	}
 };
 
-var gui = new BotGUI({
-	level: gPlayerInfo.level,
-	exp: gPlayerInfo.score
-});
+function initGUI(){
+	if (!gGame.m_State || gGame.m_State instanceof CBootState || gGame.m_IsStateLoading){
+	    if(gGame.m_State && !gGame.m_IsStateLoading && !start_button){
+		start_button = true;
+		console.log("clicking button");
+		gGame.m_State.button.click();
+	    }
+	    setTimeout(function() { initGUI(); }, 100);
+	} else {
+	    console.log(gGame);
+	    gui = new BotGUI({
+		level: gPlayerInfo.level,
+		exp: gPlayerInfo.score
+	    });
+	    // ============= CODE THAT AUTORUNS ON LOAD =============
+	    // Auto-grab the access token
+	    INJECT_get_access_token();
+
+	    // Run the global initializer, which will call the function for whichever screen you're in
+	    INJECT_init();
+	}
+};
+initGUI();
 
 function calculateTimeToNextLevel() {	
 	const nextScoreAmount = get_max_score(target_zone);
@@ -756,10 +777,3 @@ var INJECT_disable_animations = function() {
 		$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
 	}
 };
-
-// ============= CODE THAT AUTORUNS ON LOAD =============
-// Auto-grab the access token
-INJECT_get_access_token();
-
-// Run the global initializer, which will call the function for whichever screen you're in
-INJECT_init();
