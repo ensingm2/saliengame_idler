@@ -222,6 +222,8 @@ var INJECT_wait_for_end = function() {
 	var time_remaining_ms = (resend_frequency*1000) - time_passed_ms;
 	var time_remaining = Math.round(time_remaining_ms/1000);
 	gui.updateTask("Waiting " + time_remaining + "s for round to end", false);
+	gui.updateStatus(true);
+	gui.progressbar.SetValue(time_passed_ms/(resend_frequency*1000))
 	calculateTimeToNextLevel();
 	
 	// Wait
