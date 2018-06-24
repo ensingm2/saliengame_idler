@@ -128,6 +128,20 @@ function calculateTimeToNextLevel() {
 	return secondsLeft;
 }
 
+// Handle AJAX errors to avoid the script to be locked by a single API error
+function ajaxErrorHandling(ajaxObj, params, messagesArray) {
+	ajaxObj.tryCount++;
+	if (ajaxObj.tryCount <= ajaxObj.retryLimit) {
+		var currentTask = "Retrying in 5s to " + messagesArray[0] + " (Retry #" + ajaxObj.tryCount + "). Error: " + params.xhr.status + ": " + params.thrownError;
+		gui.updateTask(currentTask);
+		setTimeout(function() { $J.ajax(ajaxObj); }, 5000);
+		return;
+	}
+	var currentTask = "Error " + messagesArray[1] + ": " + params.xhr.status + ": " + params.thrownError + " (Max retries reached).";
+	gui.updateTask(currentTask);
+	return;
+}
+
 // Grab the user's access token
 var INJECT_get_access_token = function() {
 	$J.ajax({
@@ -164,6 +178,8 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 		type: "POST",
 		url: "https://community.steam-api.com/ITerritoryControlMinigameService/JoinZone/v0001/",
 		data: { access_token: access_token, zone_position: zone },
+		tryCount : 0,
+		retryLimit : max_retry,
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
 				// Check if the zone is completed
@@ -212,7 +228,13 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 			}
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
-			alert("Error starting round: " + xhr.status + ": " + thrownError);
+			var messagesArray = ["start the round", "starting round"];
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
 }
@@ -263,6 +285,8 @@ var INJECT_end_round = function(attempt_no) {
 		type: "POST",
 		url: "https://community.steam-api.com/ITerritoryControlMinigameService/ReportScore/v0001/",
 		data: { access_token: access_token, score: score, language: language },
+		tryCount : 0,
+		retryLimit : max_retry,
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
 				// Check if the zone is completed
@@ -302,6 +326,15 @@ var INJECT_end_round = function(attempt_no) {
 					INJECT_start_round(target_zone, access_token)
 				}
 			}
+		},
+		error: function (xhr, ajaxOptions, thrownError) {
+			var messagesArray = ["end the round", "ending round"];
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
 }
@@ -322,7 +355,18 @@ var INJECT_leave_round = function() {
 		type: "POST",
 		url: "https://community.steam-api.com/IMiniGameService/LeaveGame/v0001/",
 		data: { access_token: access_token, gameid: current_game_id },
-		success: function(data) {}
+		tryCount : 0,
+		retryLimit : max_retry,
+		success: function(data) {},
+		error: function (xhr, ajaxOptions, thrownError) {
+			var messagesArray = ["leave the round", "leaving round"];
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
+		}
 	});
 
 	// Clear the current game ID var
@@ -364,6 +408,8 @@ var INJECT_update_grid = function() {
 		type: "GET",
 		url: "https://community.steam-api.com/ITerritoryControlMinigameService/GetPlanet/v0001/",
 		data: { id: current_planet_id },
+		tryCount : 0,
+		retryLimit : max_retry,
 		success: function(data) {
 			window.gGame.m_State.m_PlanetData = data.response.planets[0];
 			window.gGame.m_State.m_PlanetData.zones.forEach( function ( zone ) {
@@ -372,6 +418,15 @@ var INJECT_update_grid = function() {
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.difficulty = zone.difficulty; 
 			});
 			console.log("Successfully updated map data on planet: " + current_planet_id);
+		},
+		error: function (xhr, ajaxOptions, thrownError) {
+			var messagesArray = ["update the grid", "updating the grid"];
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
 }
@@ -439,11 +494,22 @@ function GetBestPlanet() {
 		async: false,
 		type: "GET",
 		url: "https://community.steam-api.com/ITerritoryControlMinigameService/GetPlanets/v0001/",
+		tryCount : 0,
+		retryLimit : max_retry,
 		success: function(data) {
 			data.response.planets.forEach( function(planet) {
 				if (planet.state.active == true && planet.state.captured == false)
 					activePlanetsScore[planet.id] = 0;
 			});
+		},
+		error: function (xhr, ajaxOptions, thrownError) {
+			var messagesArray = ["get active planets", "getting active planets"];
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
 	
