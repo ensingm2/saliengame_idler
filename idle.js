@@ -5,8 +5,6 @@
 // @author       ensingm2
 // @match        *://steamcommunity.com/saliengame/play
 // @grant        none
-// @downloadURL  https://raw.githubusercontent.com/ensingm2/saliengame_idler/master/idle.js
-// @updateURL    https://raw.githubusercontent.com/ensingm2/saliengame_idler/master/idle.js
 // ==/UserScript==
 
 // This is the zone you want to attack (Optional, otherwise picks one for you).
