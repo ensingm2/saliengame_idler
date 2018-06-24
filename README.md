@@ -7,13 +7,13 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 
 ### Features
 * Does not need to run the game at all, works from the main map.
-* Fast switching between zones.
-* Will automatically send the maximum score allowed for each zone difficulty.
-* Automatically restarts runs after completion.
+* Automatic switching between zones.
+* Easy zone override with the default map.
+* Allows quick-switching of planets
+* Sends the maximum score allowed for each zone difficulty.
+* Automatically repeats runs after completion.
 * Optionally disables game animations to minimize game resource usage.
 * Status GUI to update level, experience, time remaining in round, etc
-* Allows manual override of zone selection
-* Allows quick-switching of planets
 
 ### How to Run
 **Currently tested on Chrome/Chromium, Firefox and Safari. Internet Explorer and Edge both encounter errors. The following guide is for Chrome:**
@@ -28,9 +28,8 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 Note: The script may also be setup on userscript managers such as Greasemonkey/Tampermonkey however this is advised against enabling automatic updates for _*any*_ scripts, for your own security.
 
 ### TO DO
-* Put more info in the GUI (Current target, zone info, etc. Maybe a progress bar for timer?)
 * Potentially highlight selected zones on the grid?
-* Auto-switch between planets
+* Auto-switch between planets (Currently being tested)
 * Smarter optimizations of resource usage
 * I have a feeling the game will evolve over time, so handle things as they come.
 * Any other cool features, with support from viewers like you!
