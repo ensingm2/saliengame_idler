@@ -16,7 +16,7 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 * Allows quick-switching of planets
 
 ### How to Run
-**Currently tested on Chrome, Firefox and Safari. The following guide is for Chrome:**
+**Currently tested on Chrome/Chromium, Firefox and Safari. Internet Explorer and Edge both encounter errors. The following guide is for Chrome:**
 
 1. Open the Salien Game in a new tab and open the planet or battle selector map.
 2. Bring up the JavaScript Console
