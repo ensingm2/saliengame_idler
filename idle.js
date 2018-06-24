@@ -1,3 +1,14 @@
+// ==UserScript==
+// @name         Ensingm2 Salien Game Idler
+// @namespace    https://github.com/ensingm2/saliengame_idler
+// @version      0.0.1
+// @author       ensingm2
+// @match        *://steamcommunity.com/saliengame/*
+// @grant        none
+// @downloadURL  https://raw.githubusercontent.com/ensingm2/saliengame_idler/master/idle.js
+// @updateURL    https://raw.githubusercontent.com/ensingm2/saliengame_idler/master/idle.js
+// ==/UserScript==
+
 // This is the zone you want to attack (Optional, otherwise picks one for you).
 var target_zone = -1;
 
