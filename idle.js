@@ -325,7 +325,7 @@ var INJECT_end_round = function(attempt_no) {
 				INJECT_update_player_info();
 
 				// Update the GUI
-				window.gui.updateZone("None");
+				gui.updateZone("None");
 
 				// Restart the round if we have that variable set
 				if(loop_rounds) {
