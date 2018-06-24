@@ -140,15 +140,11 @@ function initGUI(){
 		level: gPlayerInfo.level,
 		exp: gPlayerInfo.score
 	    });
-	    // ============= CODE THAT AUTORUNS ON LOAD =============
-	    // Auto-grab the access token
-	    INJECT_get_access_token();
 
 	    // Run the global initializer, which will call the function for whichever screen you're in
 	    INJECT_init();
 	}
 };
-initGUI();
 
 function calculateTimeToNextLevel() {	
 	const nextScoreAmount = get_max_score(target_zone);
@@ -777,3 +773,11 @@ var INJECT_disable_animations = function() {
 		$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
 	}
 };
+
+// Run initialization code on load
+$J(document).ready(function() {
+	// Auto-grab the access token
+	INJECT_get_access_token();
+
+	initGUI();
+})
