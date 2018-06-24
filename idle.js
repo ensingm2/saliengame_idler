@@ -488,7 +488,7 @@ function SwitchNextZone(attempt_no, planet_call) {
 	if (next_zone !== undefined) {
 		if (next_zone != target_zone) {
 			console.log("Found new best zone: " + next_zone);
-			INJECT_start_round(target_zone, access_token, attempt_no);
+			INJECT_start_round(next_zone, access_token, attempt_no);
 		} else {
 			console.log("Current zone #" + target_zone + " is already the best. No need to switch.");
 			if (planet_call === true)
