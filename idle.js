@@ -129,16 +129,16 @@ function calculateTimeToNextLevel() {
 }
 
 // Handle AJAX errors to avoid the script to be locked by a single API error
-function ajaxErrorHandling(ajaxObj, messagesArray) {
+function ajaxErrorHandling(ajaxObj, params, messagesArray) {
 	ajaxObj.tryCount++;
 	if (ajaxObj.tryCount <= ajaxObj.retryLimit) {
-		var currentTask = "Retrying to " + messagesArray[0] + " (Retry #" + ajaxObj.tryCount + "). Error: " + xhr.status + ": " + thrownError;
+		var currentTask = "Retrying to " + messagesArray[0] + " (Retry #" + ajaxObj.tryCount + "). Error: " + params.xhr.status + ": " + params.thrownError;
 		console.log(currentTask);
 		gui.updateTask(currentTask);
 		$.ajax(ajaxObj);
 		return;
 	}
-	var currentTask = "Error " + messagesArray[1] + ": " + xhr.status + ": " + thrownError + " (Max retries reached).";
+	var currentTask = "Error " + messagesArray[1] + ": " + params.xhr.status + ": " + params.thrownError + " (Max retries reached).";
 	console.log(currentTask);
 	gui.updateTask(currentTask);
 	return;
@@ -231,7 +231,12 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
 			var messagesArray = ["start the round", "starting round"];
-			ajaxErrorHandling(this, messagesArray);
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
 }
@@ -326,7 +331,12 @@ var INJECT_end_round = function(attempt_no) {
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
 			var messagesArray = ["end the round", "ending round"];
-			ajaxErrorHandling(this, messagesArray);
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
 }
@@ -352,7 +362,12 @@ var INJECT_leave_round = function() {
 		success: function(data) {},
 		error: function (xhr, ajaxOptions, thrownError) {
 			var messagesArray = ["leave the round", "leaving round"];
-			ajaxErrorHandling(this, messagesArray);
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
 
@@ -408,7 +423,12 @@ var INJECT_update_grid = function() {
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
 			var messagesArray = ["update the grid", "updating the grid"];
-			ajaxErrorHandling(this, messagesArray);
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
 }
@@ -486,7 +506,12 @@ function GetBestPlanet() {
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
 			var messagesArray = ["get active planets", "getting active planets"];
-			ajaxErrorHandling(this, messagesArray);
+			var ajaxParams = {
+				xhr: xhr, 
+				ajaxOptions: ajaxOptions, 
+				thrownError: thrownError
+			};
+			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
 	
