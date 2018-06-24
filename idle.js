@@ -166,18 +166,18 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 		data: { access_token: access_token, zone_position: zone },
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
-				if(attempt_no < max_retry) {
+				// Check if the zone is completed
+				INJECT_update_grid();
+				if(window.gGame.m_State.m_Grid.m_Tiles[target_zone].Info.captured || attempt_no >= max_retry) {
+					if (auto_switch_planet.active == true)
+						CheckSwitchBetterPlanet();
+					else
+						SwitchNextZone();
+				}
+				else {
 					console.log("Error getting zone response:",data);
 					gui.updateTask("Waiting 5s and re-sending join attempt(Attempt #" + attempt_no + ").");
 					setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
-				}
-				else {
-                   	attempt_no = 0;
-					if (auto_switch_planet.active == true) {
-						CheckSwitchBetterPlanet();
-					} else {
-						SwitchNextZone(attempt_no);
-					}
 				}
 			}
 			else {
@@ -265,17 +265,18 @@ var INJECT_end_round = function(attempt_no) {
 		data: { access_token: access_token, score: score, language: language },
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
-				if (attempt_no < max_retry) {
+				// Check if the zone is completed
+				INJECT_update_grid();
+				if(window.gGame.m_State.m_Grid.m_Tiles[target_zone].Info.captured || attempt_no >= max_retry) {
+					if (auto_switch_planet.active == true)
+						CheckSwitchBetterPlanet();
+					else
+						SwitchNextZone();
+				}
+				else {
 					console.log("Error getting zone response:",data);
 					gui.updateTask("Waiting 5s and re-sending score(Attempt #" + attempt_no + ").");
 					setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
-				} else {
-					attempt_no = 0;
-					if (auto_switch_planet.active == true) {
-						CheckSwitchBetterPlanet();
-					} else {
-						SwitchNextZone(attempt_no);
-					}
 				}
 			}
 			else {
