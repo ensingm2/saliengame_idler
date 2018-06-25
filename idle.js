@@ -4,6 +4,7 @@
 // @version		0.0.1
 // @author		ensingm2
 // @match		*://steamcommunity.com/saliengame/play
+// @match		*://steamcommunity.com/saliengame/play/
 // @grant		none
 // ==/UserScript==
 
