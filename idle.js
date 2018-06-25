@@ -517,6 +517,9 @@ function GetBestZone() {
 
 // Get the best planet available
 function GetBestPlanet() {
+	// No need to move if we're already in a zone with the wanted difficulty
+	if(auto_switch_planet.current_difficulty == auto_switch_planet.wanted_difficulty)
+		return current_planet_id;
 	var bestPlanetId = undefined;
 	var activePlanetsScore = [];
 	var maxScore = 0;
