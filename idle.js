@@ -1,3 +1,12 @@
+// ==UserScript==
+// @name         Ensingm2 Salien Game Idler
+// @namespace    https://github.com/ensingm2/saliengame_idler
+// @version      0.0.1
+// @author       ensingm2
+// @match        *://steamcommunity.com/saliengame/play
+// @grant        none
+// ==/UserScript==
+
 // This is the zone you want to attack (Optional, otherwise picks one for you).
 var target_zone = -1;
 
@@ -22,6 +31,8 @@ var auto_switch_planet = {
 	"rounds_before_check": 5, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
 	"current_round": 0
 };
+var gui; //local gui variable
+var start_button = false; // is start button already pressed?
 
 class BotGUI {
 	constructor(state) {
@@ -121,10 +132,25 @@ class BotGUI {
 	}
 };
 
-var gui = new BotGUI({
-	level: gPlayerInfo.level,
-	exp: gPlayerInfo.score
-});
+function initGUI(){
+	if (!gGame.m_State || gGame.m_State instanceof CBootState || gGame.m_IsStateLoading){
+	    if(gGame.m_State && !gGame.m_IsStateLoading && !start_button){
+		start_button = true;
+		console.log("clicking button");
+		gGame.m_State.button.click();
+	    }
+	    setTimeout(function() { initGUI(); }, 100);
+	} else {
+	    console.log(gGame);
+	    gui = new BotGUI({
+		level: gPlayerInfo.level,
+		exp: gPlayerInfo.score
+	    });
+
+	    // Run the global initializer, which will call the function for whichever screen you're in
+	    INJECT_init();
+	}
+};
 
 function calculateTimeToNextLevel() {	
 	const nextScoreAmount = get_max_score(target_zone);
@@ -325,7 +351,7 @@ var INJECT_end_round = function(attempt_no) {
 				INJECT_update_player_info();
 
 				// Update the GUI
-				window.gui.updateZone("None");
+				gui.updateZone("None");
 
 				// Restart the round if we have that variable set
 				if(loop_rounds) {
@@ -820,9 +846,10 @@ var INJECT_disable_animations = function() {
 	}
 };
 
-// ============= CODE THAT AUTORUNS ON LOAD =============
-// Auto-grab the access token
-INJECT_get_access_token();
+// Run initialization code on load
+$J(document).ready(function() {
+	// Auto-grab the access token
+	INJECT_get_access_token();
 
-// Run the global initializer, which will call the function for whichever screen you're in
-INJECT_init();
+	initGUI();
+})
