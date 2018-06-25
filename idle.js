@@ -526,6 +526,7 @@ function GetBestPlanet() {
 		return current_planet_id;
 	var bestPlanetId = undefined;
 	var activePlanetsScore = [];
+	var planetsMaxDifficulty = [];
 	var maxScore = 0;
 	var numberErrors = 0;
 	
@@ -542,6 +543,7 @@ function GetBestPlanet() {
 			data.response.planets.forEach( function(planet) {
 				if (planet.state.active == true && planet.state.captured == false)
 					activePlanetsScore[planet.id] = 0;
+					planetsMaxDifficulty[planet.id] = 0;
 			});
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -567,6 +569,8 @@ function GetBestPlanet() {
 				data.response.planets[0].zones.forEach( function ( zone ) {
 					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false)
 						activePlanetsScore[planet_id] += Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zone.capture_progress));
+						if (zone.difficulty > planetsMaxDifficulty[planet_id])
+							planetsMaxDifficulty[planet_id] = zone.difficulty;
 				});
 			},
 			error: function() {
@@ -579,6 +583,12 @@ function GetBestPlanet() {
 		}
 	});
 	console.log(activePlanetsScore);
+	
+	// Check if the maximum difficulty available on the best planet is the same as the current one
+	// If yes, no need to move
+	if (planetsMaxDifficulty[bestPlanetId] == auto_switch_planet.current_difficulty)
+		return current_planet_id;
+	
 	// Prevent a planet switch if there were >= 2 errors while fetching planets or if there's an error while fetching the current planet score
 	if (numberErrors >= 2 || ((current_planet_id in activePlanetsScore) && activePlanetsScore[current_planet_id] == 0))
 		return null;
