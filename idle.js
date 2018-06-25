@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         Ensingm2 Salien Game Idler
-// @namespace    https://github.com/ensingm2/saliengame_idler
-// @version      0.0.1
-// @author       ensingm2
-// @match        *://steamcommunity.com/saliengame/play
-// @grant        none
+// @name		Ensingm2 Salien Game Idler
+// @namespace	https://github.com/ensingm2/saliengame_idler
+// @version		0.0.1
+// @author		ensingm2
+// @match		*://steamcommunity.com/saliengame/play
+// @grant		none
 // ==/UserScript==
 
 // This is the zone you want to attack (Optional, otherwise picks one for you).
@@ -134,21 +134,21 @@ class BotGUI {
 
 function initGUI(){
 	if (!gGame.m_State || gGame.m_State instanceof CBootState || gGame.m_IsStateLoading){
-	    if(gGame.m_State && !gGame.m_IsStateLoading && !start_button){
-		start_button = true;
-		console.log("clicking button");
-		gGame.m_State.button.click();
-	    }
-	    setTimeout(function() { initGUI(); }, 100);
+		if(gGame.m_State && !gGame.m_IsStateLoading && !start_button){
+			start_button = true;
+			console.log("clicking button");
+			gGame.m_State.button.click();
+		}
+		setTimeout(function() { initGUI(); }, 100);
 	} else {
-	    console.log(gGame);
-	    gui = new BotGUI({
-		level: gPlayerInfo.level,
-		exp: gPlayerInfo.score
-	    });
+		console.log(gGame);
+		gui = new BotGUI({
+			level: gPlayerInfo.level,
+			exp: gPlayerInfo.score
+		});
 
-	    // Run the global initializer, which will call the function for whichever screen you're in
-	    INJECT_init();
+		// Run the global initializer, which will call the function for whichever screen you're in
+		INJECT_init();
 	}
 };
 
@@ -169,11 +169,11 @@ function ajaxErrorHandling(ajaxObj, params, messagesArray) {
 		var currentTask = "Retrying in 5s to " + messagesArray[0] + " (Retry #" + ajaxObj.tryCount + "). Error: " + params.xhr.status + ": " + params.thrownError;
 		gui.updateTask(currentTask);
 		setTimeout(function() { $J.ajax(ajaxObj); }, 5000);
-		return;
 	}
-	var currentTask = "Error " + messagesArray[1] + ": " + params.xhr.status + ": " + params.thrownError + " (Max retries reached).";
-	gui.updateTask(currentTask);
-	return;
+	else {
+		var currentTask = "Error " + messagesArray[1] + ": " + params.xhr.status + ": " + params.thrownError + " (Max retries reached).";
+		gui.updateTask(currentTask);
+	}
 }
 
 // Grab the user's access token
@@ -238,16 +238,18 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 				target_zone = zone;
 				
 				// Update the GUI
-        		gui.updateStatus(true);
+				gui.updateStatus(true);
 				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
 				gui.updateEstimatedTime(calculateTimeToNextLevel());
-        
+		
 				current_game_id = data.response.zone_info.gameid;
 
 				if (auto_switch_planet.active == true) {
 					if (auto_switch_planet.current_difficulty != data.response.zone_info.difficulty)
 						auto_switch_planet.current_round = 0; // Difficulty changed, reset rounds counter before new planet check
+
 					auto_switch_planet.current_difficulty = data.response.zone_info.difficulty;
+
 					if (auto_switch_planet.current_difficulty < auto_switch_planet.wanted_difficulty) {
 						if (auto_switch_planet.current_round >= auto_switch_planet.rounds_before_check) {
 							auto_switch_planet.current_round = 0;
@@ -340,18 +342,16 @@ var INJECT_end_round = function(attempt_no) {
 			}
 			else {
 				console.log("Successfully finished the round and got expected data back:");
-				console.log("Level: ", data.response.new_level, "\nEXP:   ", data.response.new_score);
+				console.log("Level: ", data.response.new_level, "\nEXP: ", data.response.new_score);
 				console.log(data);
 
-				gui.updateLevel(data.response.new_level);
-				gui.updateExp(data.response.new_score);
-				// When we get a new EXP we also want to recalculate the time for next level.
-				gui.updateEstimatedTime(calculateTimeToNextLevel())
-
-				// Update the player info in the UI
+				// Update the player info
 				INJECT_update_player_info();
 
-				// Update the GUI
+				// Update GUI
+				gui.updateLevel(data.response.new_level);
+				gui.updateExp(data.response.new_score);
+				gui.updateEstimatedTime(calculateTimeToNextLevel());
 				gui.updateZone("None");
 
 				// Restart the round if we have that variable set
@@ -588,8 +588,10 @@ function SwitchNextZone(attempt_no, planet_call) {
 		attempt_no = 0;
 	if (planet_call === undefined)
 		planet_call = false;
+
 	INJECT_update_grid();
 	var next_zone = GetBestZone();
+
 	if (next_zone !== undefined) {
 		if (next_zone != target_zone) {
 			console.log("Found new best zone: " + next_zone);
@@ -617,7 +619,9 @@ function SwitchNextZone(attempt_no, planet_call) {
 function CheckSwitchBetterPlanet(difficulty_call) {
 	if (difficulty_call === undefined)
 		difficulty_call = false;
+
 	var best_planet = GetBestPlanet();
+
 	if (best_planet !== undefined && best_planet !== null && best_planet !== current_planet_id) {
 		console.log("Planet #" + best_planet + " has higher XP potential. Switching to it. Bye planet #" + current_planet_id);
 		INJECT_switch_planet(best_planet, function() {
@@ -673,7 +677,7 @@ var INJECT_switch_planet = function(planet_id, callback) {
 				wait_for_state_load();
 			},
 			function ( response ) {
-				ShowAlertDialog( 'Join Planet Error', 'Failed to join planet.  Please reload your game or try again shortly.' );
+				ShowAlertDialog( 'Join Planet Error', 'Failed to join planet. Please reload your game or try again shortly.' );
 			});
 	});
 
@@ -751,9 +755,12 @@ var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
 		}
 	}).fail( error_callback );
 }
+
 var INJECT_init_battle_selection = function() {
+	// Update the GUI
 	gui.updateStatus(true);
 	gui.updateTask("Initializing Battle Selection Menu.");
+
 	// Auto join best zone at first
 	if (auto_first_join == true) {
 		firstJoin();
@@ -855,5 +862,6 @@ $J(document).ready(function() {
 	// Auto-grab the access token
 	INJECT_get_access_token();
 
+	// Call our global init function
 	initGUI();
 })
