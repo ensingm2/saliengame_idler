@@ -236,6 +236,13 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 
 				// Set target
 				target_zone = zone;
+				
+				// Update the GUI
+        		gui.updateStatus(true);
+				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
+				gui.updateEstimatedTime(calculateTimeToNextLevel());
+        
+				current_game_id = data.response.zone_info.gameid;
 
 				if (auto_switch_planet.active == true) {
 					if (auto_switch_planet.current_difficulty != data.response.zone_info.difficulty)
@@ -251,12 +258,6 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 					}
 				}
 				
-				// Update the GUI
-        		gui.updateStatus(true);
-				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
-				gui.updateEstimatedTime(calculateTimeToNextLevel());
-        
-				current_game_id = data.response.zone_info.gameid;
 				current_game_start = new Date().getTime();
 				INJECT_wait_for_end(resend_frequency);
 			}
@@ -516,6 +517,9 @@ function GetBestZone() {
 
 // Get the best planet available
 function GetBestPlanet() {
+	// No need to move if we're already in a zone with the wanted difficulty
+	if(auto_switch_planet.current_difficulty == auto_switch_planet.wanted_difficulty)
+		return current_planet_id;
 	var bestPlanetId = undefined;
 	var activePlanetsScore = [];
 	var maxScore = 0;
