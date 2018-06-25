@@ -217,7 +217,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
 				// Check if the zone is completed
-				INJECT_update_grid();
+				INJECT_update_grid(false); // Error handling set to false to avoid too much parallel calls with the setTimeout below
 				if(window.gGame.m_State.m_Grid.m_Tiles[target_zone].Info.captured || attempt_no >= max_retry) {
 					if (auto_switch_planet.active == true)
 						CheckSwitchBetterPlanet();
@@ -327,7 +327,7 @@ var INJECT_end_round = function(attempt_no) {
 		success: function(data) {
 			if( $J.isEmptyObject(data.response) ) {
 				// Check if the zone is completed
-				INJECT_update_grid();
+				INJECT_update_grid(false); // Error handling set to false to avoid too much parallel calls with the setTimeout below
 				if(window.gGame.m_State.m_Grid.m_Tiles[target_zone].Info.captured || attempt_no >= max_retry) {
 					if (auto_switch_planet.active == true)
 						CheckSwitchBetterPlanet();
@@ -431,9 +431,11 @@ var INJECT_update_player_info = function() {
 }
 
 // Update the zones of the grid (map) on the current planet
-var INJECT_update_grid = function() {
+var INJECT_update_grid = function(error_handling) {
 	if(current_planet_id === undefined)
 		return;
+	if (error_handling === undefined)
+		error_handling = true;
 
 	gui.updateTask('Updating grid', true);
 
@@ -455,13 +457,15 @@ var INJECT_update_grid = function() {
 			console.log("Successfully updated map data on planet: " + current_planet_id);
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
-			var messagesArray = ["update the grid", "updating the grid"];
-			var ajaxParams = {
-				xhr: xhr, 
-				ajaxOptions: ajaxOptions, 
-				thrownError: thrownError
-			};
-			ajaxErrorHandling(this, ajaxParams, messagesArray);
+			if (error_handling == true) {
+				var messagesArray = ["update the grid", "updating the grid"];
+				var ajaxParams = {
+					xhr: xhr, 
+					ajaxOptions: ajaxOptions, 
+					thrownError: thrownError
+				};
+				ajaxErrorHandling(this, ajaxParams, messagesArray);
+			}
 		}
 	});
 }
