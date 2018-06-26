@@ -25,8 +25,10 @@ var current_timeout = undefined;
 var max_retry = 5; // Max number of retries to send requests
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
+var last_update_grid = undefined; // Last time we updated the grid (to avoid too frequent calls)
+var check_game_state = undefined; // Check the state of the game script and unlock it if needed (SetInterval)
 var auto_switch_planet = {
-	"active": false, // Automatically switch to the best planet available (true : yes, false : no)
+	"active": true, // Automatically switch to the best planet available (true : yes, false : no)
 	"current_difficulty": undefined,
 	"wanted_difficulty": 3, // Difficulty prefered. Will check planets if the current one differs
 	"rounds_before_check": 5, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
@@ -175,6 +177,25 @@ function ajaxErrorHandling(ajaxObj, params, messagesArray) {
 		var currentTask = "Error " + messagesArray[1] + ": " + params.xhr.status + ": " + params.thrownError + " (Max retries reached).";
 		gui.updateTask(currentTask);
 	}
+}
+
+// Check the state of the game script and unlock it if needed
+function checkUnlockGameState() {
+	if (current_game_start === undefined)
+		return;
+	var now = new Date().getTime();
+	var timeDiff = (now - current_game_start) / 1000;
+	var maxWait = 900; // Time (in seconds) to wait until we try to unlock the script
+	if (timeDiff < maxWait)
+		return;
+	gui.updateTask("Detected the game script is locked. Trying to unlock it.");
+	clearInterval(check_game_state);
+	if (auto_switch_planet.active == true) {
+		CheckSwitchBetterPlanet(true);
+	} else {
+		SwitchNextZone(0, true);
+	}
+	check_game_state = setInterval(checkUnlockGameState, 60000);
 }
 
 // Grab the user's access token
@@ -357,7 +378,6 @@ var INJECT_end_round = function(attempt_no) {
 
 				// Restart the round if we have that variable set
 				if(loop_rounds) {
-					UpdateNotificationCounts();
 					current_game_id = undefined;
 					INJECT_start_round(target_zone, access_token)
 				}
@@ -437,6 +457,13 @@ var INJECT_update_grid = function(error_handling) {
 		return;
 	if (error_handling === undefined)
 		error_handling = true;
+	
+	// Skip update if a previous successful one happened in the last 13s
+	if (last_update_grid !== undefined) {
+		var last_update_diff = new Date().getTime() - last_update_grid;
+		if ((last_update_diff / 1000) < 13)
+			return;
+	}
 
 	gui.updateTask('Updating grid', true);
 
@@ -455,6 +482,7 @@ var INJECT_update_grid = function(error_handling) {
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.captured = zone.captured; 
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.difficulty = zone.difficulty; 
 			});
+			last_update_grid = new Date().getTime();
 			console.log("Successfully updated map data on planet: " + current_planet_id);
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -590,8 +618,10 @@ function GetBestPlanet() {
 	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] == auto_switch_planet.current_difficulty)
 		return current_planet_id;
 	
-	// Prevent a planet switch if there were >= 2 errors while fetching planets or if there's an error while fetching the current planet score
-	if (numberErrors >= 2 || ((current_planet_id in activePlanetsScore) && activePlanetsScore[current_planet_id] == 0))
+	// Prevent a planet switch if :
+	// (there were >= 2 errors while fetching planets OR if there's an error while fetching the current planet score)
+	// AND the max difficulty available on best planet found is <= current difficulty
+	if ((numberErrors >= 2 || ((current_planet_id in activePlanetsScore) && activePlanetsScore[current_planet_id] == 0)) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty)
 		return null;
 	
 	return bestPlanetId;
@@ -613,7 +643,7 @@ function SwitchNextZone(attempt_no, planet_call) {
 			INJECT_start_round(next_zone, access_token, attempt_no);
 		} else {
 			console.log("Current zone #" + target_zone + " is already the best. No need to switch.");
-			if (planet_call === true)
+			//if (planet_call === true)
 				INJECT_start_round(target_zone, access_token, attempt_no);
 		}
 	} else {
@@ -776,6 +806,8 @@ var INJECT_init_battle_selection = function() {
 	gui.updateStatus(true);
 	gui.updateTask("Initializing Battle Selection Menu.");
 
+	check_game_state = setInterval(checkUnlockGameState, 60000);
+	
 	// Auto join best zone at first
 	if (auto_first_join == true) {
 		firstJoin();
