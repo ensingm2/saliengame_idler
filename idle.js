@@ -896,9 +896,13 @@ var INJECT_init = function() {
 };
 
 var INJECT_disable_animations = function() {
-	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Continue?");
+	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Additionally, auto-planet-switching will be disabled. Continue?");
 
 	if(confirmed) {
+		// Disable planet-switching
+		auto_switch_planet.active=false;
+
+		// Disable animations
 		requestAnimationFrame = function(){};
 		$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
 	}
