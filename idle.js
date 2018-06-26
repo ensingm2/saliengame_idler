@@ -597,10 +597,11 @@ function GetBestPlanet() {
 			data: { id: planet_id },
 			success: function(data) {
 				data.response.planets[0].zones.forEach( function ( zone ) {
-					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false)
+					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false) {
 						activePlanetsScore[planet_id] += Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zone.capture_progress));
 						if (zone.difficulty > planetsMaxDifficulty[planet_id])
 							planetsMaxDifficulty[planet_id] = zone.difficulty;
+					}
 				});
 			},
 			error: function() {
