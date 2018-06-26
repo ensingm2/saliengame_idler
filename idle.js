@@ -23,6 +23,7 @@ var current_game_start = undefined; // Timestamp for when the current game start
 var time_passed_ms = 0;
 var current_timeout = undefined;
 var max_retry = 5; // Max number of retries to send requests
+var current_retry_timeout = undefined;
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
 var last_update_grid = undefined; // Last time we updated the grid (to avoid too frequent calls)
@@ -247,9 +248,10 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 						SwitchNextZone();
 				}
 				else {
-					console.log("Error getting zone response:",data);
+					console.log("Error getting zone response (on start):",data);
 					gui.updateTask("Waiting 5s and re-sending join attempt(Attempt #" + attempt_no + ").");
-					setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
+					clearTimeout(current_retry_timeout);
+					current_retry_timeout = setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
 				}
 			}
 			else {
@@ -357,9 +359,10 @@ var INJECT_end_round = function(attempt_no) {
 						SwitchNextZone();
 				}
 				else {
-					console.log("Error getting zone response:",data);
+					console.log("Error getting zone response (on end):",data);
 					gui.updateTask("Waiting 5s and re-sending score(Attempt #" + attempt_no + ").");
-					setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
+					clearTimeout(current_retry_timeout);
+					current_retry_timeout = setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
 				}
 			}
 			else {
@@ -458,10 +461,10 @@ var INJECT_update_grid = function(error_handling) {
 	if (error_handling === undefined)
 		error_handling = true;
 	
-	// Skip update if a previous successful one happened in the last 13s
+	// Skip update if a previous successful one happened in the last 8s
 	if (last_update_grid !== undefined) {
 		var last_update_diff = new Date().getTime() - last_update_grid;
-		if ((last_update_diff / 1000) < 13)
+		if ((last_update_diff / 1000) < 8)
 			return;
 	}
 
