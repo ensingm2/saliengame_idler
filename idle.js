@@ -245,7 +245,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 						SwitchNextZone();
 				}
 				else {
-					console.log("Error getting zone response:",data);
+					console.log("Error getting zone response (on start):",data);
 					gui.updateTask("Waiting 5s and re-sending join attempt(Attempt #" + attempt_no + ").");
 					clearTimeout(current_timeout);
 					current_timeout = setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
@@ -357,7 +357,7 @@ var INJECT_end_round = function(attempt_no) {
 						SwitchNextZone();
 				}
 				else {
-					console.log("Error getting zone response:",data);
+					console.log("Error getting zone response (on end):",data);
 					gui.updateTask("Waiting 5s and re-sending score(Attempt #" + attempt_no + ").");
 					clearTimeout(current_timeout);
 					current_timeout = setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
@@ -459,10 +459,10 @@ var INJECT_update_grid = function(error_handling) {
 	if (error_handling === undefined)
 		error_handling = true;
 	
-	// Skip update if a previous successful one happened in the last 13s
+	// Skip update if a previous successful one happened in the last 8s
 	if (last_update_grid !== undefined) {
 		var last_update_diff = new Date().getTime() - last_update_grid;
-		if ((last_update_diff / 1000) < 13)
+		if ((last_update_diff / 1000) < 8)
 			return;
 	}
 
