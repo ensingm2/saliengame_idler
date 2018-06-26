@@ -752,7 +752,6 @@ var INJECT_leave_planet = function(callback) {
 
 	// Cancel timeouts
 	clearTimeout(current_timeout);
-	clearInterval(check_game_state);
 
 	// Leave our current round if we haven't.
 	INJECT_leave_round();
@@ -815,6 +814,8 @@ var INJECT_init_battle_selection = function() {
 	gui.updateTask("Initializing Battle Selection Menu.");
 
 	// Check the game state for hangups occasionally
+	if (check_game_state !== undefined)
+		clearInterval(check_game_state);
 	check_game_state = setInterval(checkUnlockGameState, 60000);
 	
 	// Auto join best zone at first
