@@ -25,8 +25,10 @@ var current_timeout = undefined;
 var max_retry = 5; // Max number of retries to send requests
 var auto_first_join = true; // Automatically join the best zone at first
 var current_planet_id = undefined;
+var last_update_grid = undefined; // Last time we updated the grid (to avoid too frequent calls)
+var check_game_state = undefined; // Check the state of the game script and unlock it if needed (setInterval)
 var auto_switch_planet = {
-	"active": false, // Automatically switch to the best planet available (true : yes, false : no)
+	"active": true, // Automatically switch to the best planet available (true : yes, false : no)
 	"current_difficulty": undefined,
 	"wanted_difficulty": 3, // Difficulty prefered. Will check planets if the current one differs
 	"rounds_before_check": 5, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
@@ -59,7 +61,8 @@ class BotGUI {
 				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span></p>`,
 				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
-				'<p><input id="disableAnimsBtn" type="button" onclick="INJECT_disable_animations()" value="Disable Animations"/></p>',
+				'<p><input id="planetSwitchCheckbox" type="checkbox"/> Automatic Planet Switching</p>',
+				'<p><input id="disableAnimsBtn" type="button" value="Disable Animations"/></p>',
 			'</div>'
 		].join(''))
 
@@ -148,6 +151,15 @@ function initGUI(){
 			exp: gPlayerInfo.score
 		});
 
+		// Set our onclicks
+		$J('#disableAnimsBtn').click(function() {
+			INJECT_disable_animations();
+		});
+		$J('#planetSwitchCheckbox').change(function() {
+			auto_switch_planet.active = this.checked;
+		});
+		$J('#planetSwitchCheckbox').prop('checked', auto_switch_planet.active);
+
 		// Run the global initializer, which will call the function for whichever screen you're in
 		INJECT_init();
 	}
@@ -174,6 +186,23 @@ function ajaxErrorHandling(ajaxObj, params, messagesArray) {
 	else {
 		var currentTask = "Error " + messagesArray[1] + ": " + params.xhr.status + ": " + params.thrownError + " (Max retries reached).";
 		gui.updateTask(currentTask);
+	}
+}
+
+// Check the state of the game script and unlock it if needed
+function checkUnlockGameState() {
+	if (current_game_start === undefined)
+		return;
+	var now = new Date().getTime();
+	var timeDiff = (now - current_game_start) / 1000;
+	var maxWait = 900; // Time (in seconds) to wait until we try to unlock the script
+	if (timeDiff < maxWait)
+		return;
+	gui.updateTask("Detected the game script is locked. Trying to unlock it.");
+	if (auto_switch_planet.active == true) {
+		CheckSwitchBetterPlanet(true);
+	} else {
+		SwitchNextZone(0, true);
 	}
 }
 
@@ -215,20 +244,30 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 		data: { access_token: access_token, zone_position: zone },
 		tryCount : 0,
 		retryLimit : max_retry,
-		success: function(data) {
+		success: function(data, textStatus, jqXHR) {
 			if( $J.isEmptyObject(data.response) ) {
 				// Check if the zone is completed
 				INJECT_update_grid(false); // Error handling set to false to avoid too much parallel calls with the setTimeout below
-				if(window.gGame.m_State.m_Grid.m_Tiles[target_zone].Info.captured || attempt_no >= max_retry) {
+				if(window.gGame.m_State.m_Grid.m_Tiles[zone].Info.captured || attempt_no >= max_retry) {
 					if (auto_switch_planet.active == true)
 						CheckSwitchBetterPlanet();
 					else
 						SwitchNextZone();
 				}
 				else {
-					console.log("Error getting zone response:",data);
-					gui.updateTask("Waiting 5s and re-sending join attempt(Attempt #" + attempt_no + ").");
-					setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
+					// Check header error for an eventual lock inside a game area
+					var errorId = jqXHR.getResponseHeader('x-eresult');
+					if (errorId == 11) {
+						var gameIdStuck = jqXHR.getResponseHeader('x-error_message').match(/\d+/)[0];
+						console.log("Stuck in the previous game area. Leaving it.");
+						current_game_id = gameIdStuck;
+						INJECT_leave_round();
+					} else {
+						console.log("Error getting zone response (on start):",data);
+					}
+					gui.updateTask("Waiting 5s and re-sending join attempt (Attempt #" + (attempt_no + 1) + ").");
+					clearTimeout(current_timeout);
+					current_timeout = setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
 				}
 			}
 			else {
@@ -287,11 +326,12 @@ var INJECT_wait_for_end = function() {
 	// Update GUI
 	gui.updateTask("Waiting " + Math.max(time_remaining, 0) + "s for round to end", false);
 	gui.updateStatus(true);
-	gui.updateEstimatedTime(calculateTimeToNextLevel())
-	gui.progressbar.SetValue(time_passed_ms/(resend_frequency*1000))
+	if (target_zone != -1)
+		gui.updateEstimatedTime(calculateTimeToNextLevel());
+	gui.progressbar.SetValue(time_passed_ms/(resend_frequency*1000));
 
 	// Wait
-	var wait_time = update_length*1000;;
+	var wait_time = update_length*1000;
 	var callback;
 	
 	// use absolute timestamps to calculate if the game is over, since setTimeout timings are not always reliable
@@ -303,6 +343,7 @@ var INJECT_wait_for_end = function() {
 	}
 	
 	// Set the timeout
+	clearTimeout(current_timeout);
 	current_timeout = setTimeout(callback, wait_time);
 }
 
@@ -336,9 +377,10 @@ var INJECT_end_round = function(attempt_no) {
 						SwitchNextZone();
 				}
 				else {
-					console.log("Error getting zone response:",data);
-					gui.updateTask("Waiting 5s and re-sending score(Attempt #" + attempt_no + ").");
-					setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
+					console.log("Error getting zone response (on end):",data);
+					gui.updateTask("Waiting 5s and re-sending score (Attempt #" + (attempt_no + 1) + ").");
+					clearTimeout(current_timeout);
+					current_timeout = setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
 				}
 			}
 			else {
@@ -357,7 +399,6 @@ var INJECT_end_round = function(attempt_no) {
 
 				// Restart the round if we have that variable set
 				if(loop_rounds) {
-					UpdateNotificationCounts();
 					current_game_id = undefined;
 					INJECT_start_round(target_zone, access_token)
 				}
@@ -437,6 +478,13 @@ var INJECT_update_grid = function(error_handling) {
 		return;
 	if (error_handling === undefined)
 		error_handling = true;
+	
+	// Skip update if a previous successful one happened in the last 8s
+	if (last_update_grid !== undefined) {
+		var last_update_diff = new Date().getTime() - last_update_grid;
+		if ((last_update_diff / 1000) < 8)
+			return;
+	}
 
 	gui.updateTask('Updating grid', true);
 
@@ -455,6 +503,7 @@ var INJECT_update_grid = function(error_handling) {
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.captured = zone.captured; 
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.difficulty = zone.difficulty; 
 			});
+			last_update_grid = new Date().getTime();
 			console.log("Successfully updated map data on planet: " + current_planet_id);
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -568,10 +617,11 @@ function GetBestPlanet() {
 			data: { id: planet_id },
 			success: function(data) {
 				data.response.planets[0].zones.forEach( function ( zone ) {
-					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false)
+					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false) {
 						activePlanetsScore[planet_id] += Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zone.capture_progress));
 						if (zone.difficulty > planetsMaxDifficulty[planet_id])
 							planetsMaxDifficulty[planet_id] = zone.difficulty;
+					}
 				});
 			},
 			error: function() {
@@ -590,8 +640,10 @@ function GetBestPlanet() {
 	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] == auto_switch_planet.current_difficulty)
 		return current_planet_id;
 	
-	// Prevent a planet switch if there were >= 2 errors while fetching planets or if there's an error while fetching the current planet score
-	if (numberErrors >= 2 || ((current_planet_id in activePlanetsScore) && activePlanetsScore[current_planet_id] == 0))
+	// Prevent a planet switch if :
+	// (there were >= 2 errors while fetching planets OR if there's an error while fetching the current planet score)
+	// AND the max difficulty available on best planet found is <= current difficulty
+	if ((numberErrors >= 2 || ((current_planet_id in activePlanetsScore) && activePlanetsScore[current_planet_id] == 0)) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty)
 		return null;
 	
 	return bestPlanetId;
@@ -613,7 +665,7 @@ function SwitchNextZone(attempt_no, planet_call) {
 			INJECT_start_round(next_zone, access_token, attempt_no);
 		} else {
 			console.log("Current zone #" + target_zone + " is already the best. No need to switch.");
-			if (planet_call === true)
+			//if (planet_call === true)
 				INJECT_start_round(target_zone, access_token, attempt_no);
 		}
 	} else {
@@ -654,25 +706,33 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 }
 
 var INJECT_switch_planet = function(planet_id, callback) {
-	// ONLY usable from battle selection
+	// ONLY usable from battle selection, if at planet selection, run join instead
+	if(gGame.m_State instanceof CPlanetSelectionState)
+		join_planet_helper(planet_id);
 	if(!(gGame.m_State instanceof CBattleSelectionState))
 		return;
 
 	gui.updateTask("Attempting to move to Planet #" + planet_id);
-
-	function wait_for_state_load() {
-		if(gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState)
-			setTimeout(function() { wait_for_state_load(); }, 50);
-		else
-			callback();
-	}
 
 	// Leave our current round if we haven't.
 	INJECT_leave_round();
 
 	// Leave the planet
 	INJECT_leave_planet(function() {
+		// Join Planet
+		join_planet_helper(planet_id);
+	});
 
+	function wait_for_state_load() {
+		if(gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState) {
+			clearTimeout(current_timeout);
+			current_timeout = setTimeout(function() { wait_for_state_load(); }, 50);
+		}
+		else
+			callback();
+	}
+
+	function join_planet_helper(planet_id) {
 		// Make sure the planet_id is valid (or we'll error out)
 		var valid_planets = gGame.m_State.m_rgPlanets;
 		var found = false;
@@ -685,7 +745,6 @@ var INJECT_switch_planet = function(planet_id, callback) {
 			return;
 		}
 
-		// Join Planet
 		INJECT_join_planet(planet_id,
 			function ( response ) {
 				gGame.ChangeState( new CBattleSelectionState( planet_id ) );
@@ -694,8 +753,7 @@ var INJECT_switch_planet = function(planet_id, callback) {
 			function ( response ) {
 				ShowAlertDialog( 'Join Planet Error', 'Failed to join planet. Please reload your game or try again shortly.' );
 			});
-	});
-
+	}
 }
 
 // Leave the planet
@@ -704,8 +762,10 @@ var INJECT_leave_planet = function(callback) {
 		callback = function() {};
 
 	function wait_for_state_load() {
-		if(gGame.m_IsStateLoading || gGame.m_State instanceof CBattleSelectionState)
-			setTimeout(function() { wait_for_state_load(); }, 50);
+		if(gGame.m_IsStateLoading || gGame.m_State instanceof CBattleSelectionState) {
+			clearTimeout(current_timeout);
+			current_timeout = setTimeout(function() { wait_for_state_load(); }, 50);
+		}
 		else {
 			// Clear the current planet ID var
 			current_planet_id = undefined;
@@ -739,8 +799,10 @@ var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
 	if(typeof error_callback !== 'function')
 		error_callback = function() {};
 	function wait_for_state_load() {
-		if(gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState)
-			setTimeout(function() { wait_for_state_load(); }, 50);
+		if(gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState) {
+			clearTimeout(current_timeout);
+			current_timeout = setTimeout(function() { wait_for_state_load(); }, 50);
+		}
 		else {
 			current_planet_id = planet_id;
 			INJECT_init();
@@ -776,13 +838,19 @@ var INJECT_init_battle_selection = function() {
 	gui.updateStatus(true);
 	gui.updateTask("Initializing Battle Selection Menu.");
 
+	// Check the game state for hangups occasionally
+	if (check_game_state !== undefined)
+		clearInterval(check_game_state);
+	check_game_state = setInterval(checkUnlockGameState, 60000);
+	
 	// Auto join best zone at first
 	if (auto_first_join == true) {
 		firstJoin();
 		function firstJoin() {
 			// Wait for state & access_token
 			if(access_token === undefined || gGame === undefined || gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState) {
-				setTimeout(function() { firstJoin(); }, 100);
+				clearTimeout(current_timeout);
+				current_timeout = setTimeout(function() { firstJoin(); }, 100);
 				console.log("waiting");
 				return;
 			}
@@ -864,9 +932,14 @@ var INJECT_init = function() {
 };
 
 var INJECT_disable_animations = function() {
-	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Continue?");
+	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Additionally, auto-planet-switching will be disabled. Continue?");
 
 	if(confirmed) {
+		// Disable planet-switching
+		auto_switch_planet.active=false;
+		$J('#planetSwitchCheckbox').prop('checked', false).attr("disabled", true);
+
+		// Disable animations
 		requestAnimationFrame = function(){};
 		$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
 	}
