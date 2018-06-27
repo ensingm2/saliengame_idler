@@ -927,6 +927,7 @@ var INJECT_disable_animations = function() {
 	if(confirmed) {
 		// Disable planet-switching
 		auto_switch_planet.active=false;
+		$J('#planetSwitchCheckbox').prop('checked', false).attr("disabled", true);
 
 		// Disable animations
 		requestAnimationFrame = function(){};
