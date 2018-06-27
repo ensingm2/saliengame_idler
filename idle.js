@@ -781,6 +781,10 @@ var INJECT_leave_planet = function(callback) {
 			current_planet_id = undefined;
 
 			INJECT_init();
+
+			// Restore old animation state
+			INJECT_toggle_animations(anim_state);
+
 			callback();
 		}
 	}
@@ -790,6 +794,10 @@ var INJECT_leave_planet = function(callback) {
 
 	// Leave our current round if we haven't.
 	INJECT_leave_round();
+
+	// Temporarily enable animations
+	var anim_state = animations_enabled;
+	INJECT_toggle_animations(true);
 
 	// (Modified) Default Code
 	gAudioManager.PlaySound( 'ui_select_backwards' );
@@ -808,6 +816,7 @@ var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
 		success_callback = function() {};
 	if(typeof error_callback !== 'function')
 		error_callback = function() {};
+
 	function wait_for_state_load() {
 		if(gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState) {
 			clearTimeout(current_timeout);
@@ -816,6 +825,9 @@ var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
 		else {
 			current_planet_id = planet_id;
 			INJECT_init();
+
+			// Restore old animation state
+			INJECT_toggle_animations(anim_state);
 		}
 	}
 
@@ -824,6 +836,10 @@ var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
 		id: planet_id,
 		access_token: access_token
 	};
+
+	// Temporarily enable animations
+	var anim_state = animations_enabled;
+	INJECT_toggle_animations(true);
 
 	$J.ajax({
 		async: false,
