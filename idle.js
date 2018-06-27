@@ -948,15 +948,15 @@ var INJECT_toggle_animations = function(enabled) {
 
 	if(enabled)
 	{
-		// Set canvas original resolution
-		$J("canvas").prop("height", 720);  $J("canvas").prop("width", 1280);
+		// Show canvas
+		$J("canvas").show();
 		// Enable animations
 		gApp.ticker.start();
 	}
 	else
 	{
-		// Set canvas resolution to 0x0 in order to hide frozen graphics 
-		$J("canvas").prop("height", 0);  $J("canvas").prop("width", 0);
+		// Hide canvas
+		$J("canvas").hide();
 		// Disable animations
 		gApp.ticker.stop();
 	}
