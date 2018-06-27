@@ -60,7 +60,8 @@ class BotGUI {
 				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
 				`<p><b>Target Zone:</b> <span id="salienbot_zone">None</span></p>`,
 				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span></p>`,
-				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + '</span></p>',
+				`<p style="display: none;" id="salienbot_zone_score_div"><b>Zone score:</b> <span id="salienbot_zone_score"></span></p>`,
+				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + " / " + this.state.next_level_exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
 				'<p><input id="planetSwitchCheckbox" type="checkbox"/> Automatic Planet Switching</p>',
 				'<p><input id="animationsCheckbox" type="checkbox"/> Animations</p>',
@@ -125,11 +126,17 @@ class BotGUI {
 			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
 		if(progress === undefined) {
 			$J("#salienbot_zone_difficulty_div").hide();
+			$J("#salienbot_zone_score_div").hide();
 			difficulty = "";
 		}
 		else {
+			$J("#salienbot_zone_score_div").show();
 			$J("#salienbot_zone_difficulty_div").show();
 			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar)
+			
+			document.getElementById('salienbot_zone_score').innerText = get_max_score(zone);
+			
+			
 		}
 
 		document.getElementById('salienbot_zone').innerText = printString;
@@ -149,7 +156,8 @@ function initGUI(){
 		console.log(gGame);
 		gui = new BotGUI({
 			level: gPlayerInfo.level,
-			exp: gPlayerInfo.score
+			exp: gPlayerInfo.score,
+			next_level_exp: gPlayerInfo.next_level_score
 		});
 
 		// Set our onclicks
@@ -172,7 +180,7 @@ function initGUI(){
 };
 
 function calculateTimeToNextLevel() {	
-	const nextScoreAmount = get_max_score(target_zone);
+	const nextScoreAmount = get_max_score(target_zone);	
 	const missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount;
 	const roundTime = resend_frequency + update_length;
 
@@ -360,7 +368,7 @@ var INJECT_end_round = function(attempt_no) {
 
 	// Grab the max score we're allowed to send
 	var score = get_max_score();
-
+	
 	// Update gui
 	gui.updateTask("Ending Round");
 
