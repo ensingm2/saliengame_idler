@@ -244,7 +244,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 		data: { access_token: access_token, zone_position: zone },
 		tryCount : 0,
 		retryLimit : max_retry,
-		success: function(data) {
+		success: function(data, textStatus, jqXHR) {
 			if( $J.isEmptyObject(data.response) ) {
 				// Check if the zone is completed
 				INJECT_update_grid(false); // Error handling set to false to avoid too much parallel calls with the setTimeout below
@@ -255,8 +255,17 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 						SwitchNextZone();
 				}
 				else {
-					console.log("Error getting zone response (on start):",data);
-					gui.updateTask("Waiting 5s and re-sending join attempt(Attempt #" + attempt_no + ").");
+					// Check header error for an eventual lock inside a game area
+					var errorId = jqXHR.getResponseHeader('x-eresult');
+					if (errorId == 11) {
+						var gameIdStuck = jqXHR.getResponseHeader('x-error_message').match(/\d+/)[0];
+						console.log("Stuck in the previous game area. Leaving it.");
+						current_game_id = gameIdStuck;
+						INJECT_leave_round();
+					} else {
+						console.log("Error getting zone response (on start):",data);
+					}
+					gui.updateTask("Waiting 5s and re-sending join attempt (Attempt #" + (attempt_no + 1) + ").");
 					clearTimeout(current_timeout);
 					current_timeout = setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
 				}
@@ -368,7 +377,7 @@ var INJECT_end_round = function(attempt_no) {
 				}
 				else {
 					console.log("Error getting zone response (on end):",data);
-					gui.updateTask("Waiting 5s and re-sending score(Attempt #" + attempt_no + ").");
+					gui.updateTask("Waiting 5s and re-sending score (Attempt #" + (attempt_no + 1) + ").");
 					clearTimeout(current_timeout);
 					current_timeout = setTimeout(function() { INJECT_end_round(attempt_no+1); }, 5000);
 				}
