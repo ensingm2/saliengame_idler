@@ -36,6 +36,7 @@ var auto_switch_planet = {
 };
 var gui; //local gui variable
 var start_button = false; // is start button already pressed?
+var animations_enabled = true;
 
 class BotGUI {
 	constructor(state) {
@@ -59,10 +60,11 @@ class BotGUI {
 				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
 				`<p><b>Target Zone:</b> <span id="salienbot_zone">None</span></p>`,
 				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span></p>`,
-				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + '</span></p>',
+				`<p style="display: none;" id="salienbot_zone_score_div"><b>Zone score:</b> <span id="salienbot_zone_score"></span></p>`,
+				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + " / " + this.state.next_level_exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
 				'<p><input id="planetSwitchCheckbox" type="checkbox"/> Automatic Planet Switching</p>',
-				'<p><input id="disableAnimsBtn" type="button" value="Disable Animations"/></p>',
+				'<p><input id="animationsCheckbox" type="checkbox"/> Animations</p>',
 			'</div>'
 		].join(''))
 
@@ -124,11 +126,17 @@ class BotGUI {
 			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
 		if(progress === undefined) {
 			$J("#salienbot_zone_difficulty_div").hide();
+			$J("#salienbot_zone_score_div").hide();
 			difficulty = "";
 		}
 		else {
+			$J("#salienbot_zone_score_div").show();
 			$J("#salienbot_zone_difficulty_div").show();
 			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar)
+			
+			document.getElementById('salienbot_zone_score').innerText = get_max_score(zone);
+			
+			
 		}
 
 		document.getElementById('salienbot_zone').innerText = printString;
@@ -148,17 +156,23 @@ function initGUI(){
 		console.log(gGame);
 		gui = new BotGUI({
 			level: gPlayerInfo.level,
-			exp: gPlayerInfo.score
+			exp: gPlayerInfo.score,
+			next_level_exp: gPlayerInfo.next_level_score
 		});
 
 		// Set our onclicks
-		$J('#disableAnimsBtn').click(function() {
+		
+		$J('#animationsCheckbox').change(function() {
+			animations_enabled = this.checked;
 			INJECT_disable_animations();
 		});
+		$J('#animationsCheckbox').prop('checked', animations_enabled);
+		
 		$J('#planetSwitchCheckbox').change(function() {
 			auto_switch_planet.active = this.checked;
 		});
 		$J('#planetSwitchCheckbox').prop('checked', auto_switch_planet.active);
+		
 
 		// Run the global initializer, which will call the function for whichever screen you're in
 		INJECT_init();
@@ -166,7 +180,7 @@ function initGUI(){
 };
 
 function calculateTimeToNextLevel() {	
-	const nextScoreAmount = get_max_score(target_zone);
+	const nextScoreAmount = get_max_score(target_zone);	
 	const missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount;
 	const roundTime = resend_frequency + update_length;
 
@@ -354,7 +368,7 @@ var INJECT_end_round = function(attempt_no) {
 
 	// Grab the max score we're allowed to send
 	var score = get_max_score();
-
+	
 	// Update gui
 	gui.updateTask("Ending Round");
 
@@ -932,17 +946,24 @@ var INJECT_init = function() {
 };
 
 var INJECT_disable_animations = function() {
-	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Additionally, auto-planet-switching will be disabled. Continue?");
 
-	if(confirmed) {
-		// Disable planet-switching
-		auto_switch_planet.active=false;
-		$J('#planetSwitchCheckbox').prop('checked', false).attr("disabled", true);
-
-		// Disable animations
-		requestAnimationFrame = function(){};
-		$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
+	if(animations_enabled)
+	{
+		// Set canvas original resolution
+		$J("canvas").prop("height", 720);  $J("canvas").prop("width", 1280);
+		// Enable animations
+		gApp.ticker.start();
 	}
+	else
+	{
+		// Set canvas resolution to 0x0 in order to hide frozen graphics 
+		$J("canvas").prop("height", 0);  $J("canvas").prop("width", 0);
+		// Disable animations
+		gApp.ticker.stop();
+	}
+
+
+
 };
 
 // Run initialization code on load
