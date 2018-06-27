@@ -238,7 +238,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 			if( $J.isEmptyObject(data.response) ) {
 				// Check if the zone is completed
 				INJECT_update_grid(false); // Error handling set to false to avoid too much parallel calls with the setTimeout below
-				if(window.gGame.m_State.m_Grid.m_Tiles[target_zone].Info.captured || attempt_no >= max_retry) {
+				if(window.gGame.m_State.m_Grid.m_Tiles[zone].Info.captured || attempt_no >= max_retry) {
 					if (auto_switch_planet.active == true)
 						CheckSwitchBetterPlanet();
 					else
