@@ -326,11 +326,12 @@ var INJECT_wait_for_end = function() {
 	// Update GUI
 	gui.updateTask("Waiting " + Math.max(time_remaining, 0) + "s for round to end", false);
 	gui.updateStatus(true);
-	gui.updateEstimatedTime(calculateTimeToNextLevel())
-	gui.progressbar.SetValue(time_passed_ms/(resend_frequency*1000))
+	if (target_zone != -1)
+		gui.updateEstimatedTime(calculateTimeToNextLevel());
+	gui.progressbar.SetValue(time_passed_ms/(resend_frequency*1000));
 
 	// Wait
-	var wait_time = update_length*1000;;
+	var wait_time = update_length*1000;
 	var callback;
 	
 	// use absolute timestamps to calculate if the game is over, since setTimeout timings are not always reliable
