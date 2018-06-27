@@ -686,11 +686,22 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 }
 
 var INJECT_switch_planet = function(planet_id, callback) {
-	// ONLY usable from battle selection
+	// ONLY usable from battle selection, if at planet selection, run join instead
+	if(gGame.m_State instanceof CPlanetSelectionState)
+		join_planet_helper(planet_id);
 	if(!(gGame.m_State instanceof CBattleSelectionState))
 		return;
 
 	gui.updateTask("Attempting to move to Planet #" + planet_id);
+
+	// Leave our current round if we haven't.
+	INJECT_leave_round();
+
+	// Leave the planet
+	INJECT_leave_planet(function() {
+		// Join Planet
+		join_planet_helper(planet_id);
+	});
 
 	function wait_for_state_load() {
 		if(gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState) {
@@ -701,12 +712,7 @@ var INJECT_switch_planet = function(planet_id, callback) {
 			callback();
 	}
 
-	// Leave our current round if we haven't.
-	INJECT_leave_round();
-
-	// Leave the planet
-	INJECT_leave_planet(function() {
-
+	function join_planet_helper(planet_id) {
 		// Make sure the planet_id is valid (or we'll error out)
 		var valid_planets = gGame.m_State.m_rgPlanets;
 		var found = false;
@@ -719,7 +725,6 @@ var INJECT_switch_planet = function(planet_id, callback) {
 			return;
 		}
 
-		// Join Planet
 		INJECT_join_planet(planet_id,
 			function ( response ) {
 				gGame.ChangeState( new CBattleSelectionState( planet_id ) );
@@ -728,8 +733,7 @@ var INJECT_switch_planet = function(planet_id, callback) {
 			function ( response ) {
 				ShowAlertDialog( 'Join Planet Error', 'Failed to join planet. Please reload your game or try again shortly.' );
 			});
-	});
-
+	}
 }
 
 // Leave the planet
