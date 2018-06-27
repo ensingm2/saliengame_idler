@@ -61,7 +61,8 @@ class BotGUI {
 				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span></p>`,
 				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
-				'<p><input id="disableAnimsBtn" type="button" onclick="INJECT_disable_animations()" value="Disable Animations"/></p>',
+				'<p><input id="planetSwitchCheckbox" type="checkbox"/> Automatic Planet Switching</p>',
+				'<p><input id="disableAnimsBtn" type="button" value="Disable Animations"/></p>',
 			'</div>'
 		].join(''))
 
@@ -149,6 +150,15 @@ function initGUI(){
 			level: gPlayerInfo.level,
 			exp: gPlayerInfo.score
 		});
+
+		// Set our onclicks
+		$J('#disableAnimsBtn').click(function() {
+			INJECT_disable_animations();
+		});
+		$J('#planetSwitchCheckbox').change(function() {
+			auto_switch_planet.active = this.checked;
+		});
+		$J('#planetSwitchCheckbox').prop('checked', auto_switch_planet.active);
 
 		// Run the global initializer, which will call the function for whichever screen you're in
 		INJECT_init();
