@@ -935,6 +935,9 @@ var INJECT_disable_animations = function() {
 	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Additionally, auto-planet-switching will be disabled. Continue?");
 
 	if(confirmed) {
+		// Set canvas resolution to 0x0 in order to hide frozen graphics 
+        	$J("canvas").prop("height", 0);  $J("canvas").prop("width", 0);
+		
 		// Disable planet-switching
 		auto_switch_planet.active=false;
 		$J('#planetSwitchCheckbox').prop('checked', false).attr("disabled", true);
