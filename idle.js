@@ -163,8 +163,7 @@ function initGUI(){
 		// Set our onclicks
 		
 		$J('#animationsCheckbox').change(function() {
-			animations_enabled = this.checked;
-			INJECT_disable_animations();
+			INJECT_toggle_animations(this.checked);
 		});
 		$J('#animationsCheckbox').prop('checked', animations_enabled);
 		
@@ -945,9 +944,9 @@ var INJECT_init = function() {
 		INJECT_init_planet_selection();
 };
 
-var INJECT_disable_animations = function() {
+var INJECT_toggle_animations = function(enabled) {
 
-	if(animations_enabled)
+	if(enabled)
 	{
 		// Set canvas original resolution
 		$J("canvas").prop("height", 720);  $J("canvas").prop("width", 1280);
@@ -961,9 +960,7 @@ var INJECT_disable_animations = function() {
 		// Disable animations
 		gApp.ticker.stop();
 	}
-
-
-
+	animations_enabled=enabled;
 };
 
 // Run initialization code on load
