@@ -203,7 +203,7 @@ function checkUnlockGameState() {
 		return;
 	var now = new Date().getTime();
 	var timeDiff = (now - current_game_start) / 1000;
-	var maxWait = 900; // Time (in seconds) to wait until we try to unlock the script
+	var maxWait = 300; // Time (in seconds) to wait until we try to unlock the script
 	if (timeDiff < maxWait)
 		return;
 	gui.updateTask("Detected the game script is locked. Trying to unlock it.");
