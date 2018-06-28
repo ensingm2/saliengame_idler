@@ -36,6 +36,7 @@ var auto_switch_planet = {
 };
 var gui; //local gui variable
 var start_button = false; // is start button already pressed?
+var animations_enabled = true;
 
 class BotGUI {
 	constructor(state) {
@@ -58,11 +59,11 @@ class BotGUI {
 				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
 				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
 				`<p><b>Target Zone:</b> <span id="salienbot_zone">None</span></p>`,
-				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span></p>`,
-				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + '</span></p>',
+				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span> (<span id="salienbot_zone_score"></span>xp/round)</p>`,
+				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + " / " + this.state.next_level_exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
 				'<p><input id="planetSwitchCheckbox" type="checkbox"/> Automatic Planet Switching</p>',
-				'<p><input id="disableAnimsBtn" type="button" value="Disable Animations"/></p>',
+				'<p><input id="animationsCheckbox" type="checkbox"/> Hide Game (Improves Performance)</p>',
 			'</div>'
 		].join(''))
 
@@ -129,6 +130,8 @@ class BotGUI {
 		else {
 			$J("#salienbot_zone_difficulty_div").show();
 			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar)
+			
+			document.getElementById('salienbot_zone_score').innerText = get_max_score(zone);
 		}
 
 		document.getElementById('salienbot_zone').innerText = printString;
@@ -148,17 +151,22 @@ function initGUI(){
 		console.log(gGame);
 		gui = new BotGUI({
 			level: gPlayerInfo.level,
-			exp: gPlayerInfo.score
+			exp: gPlayerInfo.score,
+			next_level_exp: gPlayerInfo.next_level_score
 		});
 
 		// Set our onclicks
-		$J('#disableAnimsBtn').click(function() {
-			INJECT_disable_animations();
+		
+		$J('#animationsCheckbox').change(function() {
+			INJECT_toggle_animations(!this.checked);
 		});
+		$J('#animationsCheckbox').prop('checked', !animations_enabled);
+		
 		$J('#planetSwitchCheckbox').change(function() {
 			auto_switch_planet.active = this.checked;
 		});
 		$J('#planetSwitchCheckbox').prop('checked', auto_switch_planet.active);
+		
 
 		// Run the global initializer, which will call the function for whichever screen you're in
 		INJECT_init();
@@ -166,7 +174,7 @@ function initGUI(){
 };
 
 function calculateTimeToNextLevel() {	
-	const nextScoreAmount = get_max_score(target_zone);
+	const nextScoreAmount = get_max_score(target_zone);	
 	const missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount;
 	const roundTime = resend_frequency + update_length;
 
@@ -354,7 +362,7 @@ var INJECT_end_round = function(attempt_no) {
 
 	// Grab the max score we're allowed to send
 	var score = get_max_score();
-
+	
 	// Update gui
 	gui.updateTask("Ending Round");
 
@@ -771,6 +779,10 @@ var INJECT_leave_planet = function(callback) {
 			current_planet_id = undefined;
 
 			INJECT_init();
+
+			// Restore old animation state
+			INJECT_toggle_animations(anim_state);
+
 			callback();
 		}
 	}
@@ -780,6 +792,10 @@ var INJECT_leave_planet = function(callback) {
 
 	// Leave our current round if we haven't.
 	INJECT_leave_round();
+
+	// Temporarily enable animations
+	var anim_state = animations_enabled;
+	INJECT_toggle_animations(true);
 
 	// (Modified) Default Code
 	gAudioManager.PlaySound( 'ui_select_backwards' );
@@ -798,6 +814,7 @@ var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
 		success_callback = function() {};
 	if(typeof error_callback !== 'function')
 		error_callback = function() {};
+
 	function wait_for_state_load() {
 		if(gGame.m_IsStateLoading || gGame.m_State instanceof CPlanetSelectionState) {
 			clearTimeout(current_timeout);
@@ -806,6 +823,9 @@ var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
 		else {
 			current_planet_id = planet_id;
 			INJECT_init();
+
+			// Restore old animation state
+			INJECT_toggle_animations(anim_state);
 		}
 	}
 
@@ -814,6 +834,10 @@ var INJECT_join_planet = function(planet_id, success_callback, error_callback) {
 		id: planet_id,
 		access_token: access_token
 	};
+
+	// Temporarily enable animations
+	var anim_state = animations_enabled;
+	INJECT_toggle_animations(true);
 
 	$J.ajax({
 		async: false,
@@ -931,18 +955,23 @@ var INJECT_init = function() {
 		INJECT_init_planet_selection();
 };
 
-var INJECT_disable_animations = function() {
-	var confirmed = confirm("Disabling animations will vastly reduce resources used, but you will no longer be able to manually swap zones until you refresh. Additionally, auto-planet-switching will be disabled. Continue?");
+var INJECT_toggle_animations = function(enabled) {
 
-	if(confirmed) {
-		// Disable planet-switching
-		auto_switch_planet.active=false;
-		$J('#planetSwitchCheckbox').prop('checked', false).attr("disabled", true);
-
-		// Disable animations
-		requestAnimationFrame = function(){};
-		$J("#disableAnimsBtn").prop("disabled",true).prop("value", "Animations Disabled.");
+	if(enabled)
+	{
+		// Show canvas
+		$J("canvas").show();
+		// Enable animations
+		gApp.ticker.start();
 	}
+	else
+	{
+		// Hide canvas
+		$J("canvas").hide();
+		// Disable animations
+		gApp.ticker.stop();
+	}
+	animations_enabled=enabled;
 };
 
 // Run initialization code on load
