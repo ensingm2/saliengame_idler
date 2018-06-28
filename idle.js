@@ -709,7 +709,7 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 	var lastGameStart = (current_game_start === undefined) ? now : current_game_start;
 	var timeDiff = (now - lastGameStart) / 1000;
 
-	if (best_planet !== undefined && best_planet !== null && best_planet !== current_planet_id) {
+	if (best_planet !== undefined && best_planet !== null && best_planet != current_planet_id) {
 		console.log("Planet #" + best_planet + " has higher XP potential. Switching to it. Bye planet #" + current_planet_id);
 		INJECT_switch_planet(best_planet, function() {
 			target_zone = GetBestZone();
