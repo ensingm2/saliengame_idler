@@ -648,7 +648,6 @@ function GetBestPlanet() {
 	// Check if the maximum difficulty available on the best planet is the same as the current one
 	// If yes, no need to move. Except if max difficulty = 1 and score <= 20, we'll rush it for a new planet
 	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty) {
-		activePlanetsScore.sort(function(a, b) { return a - b; });
 		var lowScorePlanet = activePlanetsScore.findIndex(function(score) { return score <= 20; });
 		if (planetsMaxDifficulty[bestPlanetId] == 1 && lowScorePlanet !== -1) {
 			return lowScorePlanet;
