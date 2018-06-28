@@ -31,7 +31,7 @@ var auto_switch_planet = {
 	"active": true, // Automatically switch to the best planet available (true : yes, false : no)
 	"current_difficulty": undefined,
 	"wanted_difficulty": 3, // Difficulty prefered. Will check planets if the current one differs
-	"rounds_before_check": 5, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
+	"rounds_before_check": 3, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
 	"current_round": 0
 };
 var gui; //local gui variable
@@ -646,9 +646,16 @@ function GetBestPlanet() {
 	console.log(activePlanetsScore);
 	
 	// Check if the maximum difficulty available on the best planet is the same as the current one
-	// If yes, no need to move
-	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty)
-		return current_planet_id;
+	// If yes, no need to move. Except if max difficulty = 1 and score <= 20, we'll rush it for a new planet
+	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty) {
+		activePlanetsScore.sort(function(a, b) { return a - b; });
+		var lowScorePlanet = activePlanetsScore.findIndex(function(score) { return score <= 20; });
+		if (planetsMaxDifficulty[bestPlanetId] == 1 && lowScorePlanet !== -1) {
+			return lowScorePlanet;
+		} else {		
+			return current_planet_id;
+		}
+	}
 	
 	// Prevent a planet switch if :
 	// (there were >= 2 errors while fetching planets OR if there's an error while fetching the current planet score)
