@@ -63,7 +63,7 @@ class BotGUI {
 				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + " / " + this.state.next_level_exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
 				'<p><input id="planetSwitchCheckbox" type="checkbox"/> Automatic Planet Switching</p>',
-				'<p><input id="animationsCheckbox" type="checkbox"/> Animations</p>',
+				'<p><input id="animationsCheckbox" type="checkbox"/> Hide Game (Improves Performance)</p>',
 			'</div>'
 		].join(''))
 
@@ -132,8 +132,6 @@ class BotGUI {
 			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar)
 			
 			document.getElementById('salienbot_zone_score').innerText = get_max_score(zone);
-			
-			
 		}
 
 		document.getElementById('salienbot_zone').innerText = printString;
@@ -160,9 +158,9 @@ function initGUI(){
 		// Set our onclicks
 		
 		$J('#animationsCheckbox').change(function() {
-			INJECT_toggle_animations(this.checked);
+			INJECT_toggle_animations(!this.checked);
 		});
-		$J('#animationsCheckbox').prop('checked', animations_enabled);
+		$J('#animationsCheckbox').prop('checked', !animations_enabled);
 		
 		$J('#planetSwitchCheckbox').change(function() {
 			auto_switch_planet.active = this.checked;
