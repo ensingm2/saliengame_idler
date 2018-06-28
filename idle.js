@@ -647,7 +647,7 @@ function GetBestPlanet() {
 	
 	// Check if the maximum difficulty available on the best planet is the same as the current one
 	// If yes, no need to move
-	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] == auto_switch_planet.current_difficulty)
+	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty)
 		return current_planet_id;
 	
 	// Prevent a planet switch if :
