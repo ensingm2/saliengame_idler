@@ -401,7 +401,7 @@ var INJECT_end_round = function(attempt_no) {
 
 				// Update GUI
 				gui.updateLevel(data.response.new_level);
-				gui.updateExp(data.response.new_score);
+				gui.updateExp(data.response.new_score + " / " + data.response.next_level_score);
 				gui.updateEstimatedTime(calculateTimeToNextLevel());
 				gui.updateZone("None");
 
@@ -651,7 +651,7 @@ function GetBestPlanet() {
 		var lowScorePlanet = activePlanetsScore.findIndex(function(score) { return score <= 20; });
 		if (planetsMaxDifficulty[bestPlanetId] == 1 && lowScorePlanet !== -1) {
 			return lowScorePlanet;
-		} else {		
+		} else {
 			return current_planet_id;
 		}
 	}
