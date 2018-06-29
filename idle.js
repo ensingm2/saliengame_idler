@@ -31,7 +31,7 @@ var auto_switch_planet = {
 	"active": true, // Automatically switch to the best planet available (true : yes, false : no)
 	"current_difficulty": undefined,
 	"wanted_difficulty": 3, // Difficulty prefered. Will check planets if the current one differs
-	"rounds_before_check": 5, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
+	"rounds_before_check": 3, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
 	"current_round": 0
 };
 var gui; //local gui variable
@@ -203,7 +203,7 @@ function checkUnlockGameState() {
 		return;
 	var now = new Date().getTime();
 	var timeDiff = (now - current_game_start) / 1000;
-	var maxWait = 900; // Time (in seconds) to wait until we try to unlock the script
+	var maxWait = 300; // Time (in seconds) to wait until we try to unlock the script
 	if (timeDiff < maxWait)
 		return;
 	gui.updateTask("Detected the game script is locked. Trying to unlock it.");
@@ -291,6 +291,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 				gui.updateEstimatedTime(calculateTimeToNextLevel());
 		
 				current_game_id = data.response.zone_info.gameid;
+				current_game_start = new Date().getTime();
 
 				if (auto_switch_planet.active == true) {
 					if (auto_switch_planet.current_difficulty != data.response.zone_info.difficulty)
@@ -308,7 +309,6 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 					}
 				}
 				
-				current_game_start = new Date().getTime();
 				INJECT_wait_for_end(resend_frequency);
 			}
 		},
@@ -646,9 +646,15 @@ function GetBestPlanet() {
 	console.log(activePlanetsScore);
 	
 	// Check if the maximum difficulty available on the best planet is the same as the current one
-	// If yes, no need to move
-	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] == auto_switch_planet.current_difficulty)
-		return current_planet_id;
+	// If yes, no need to move. Except if max difficulty = 1 and score <= 20, we'll rush it for a new planet
+	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty) {
+		var lowScorePlanet = activePlanetsScore.findIndex(function(score) { return score <= 20; });
+		if (planetsMaxDifficulty[bestPlanetId] == 1 && lowScorePlanet !== -1) {
+			return lowScorePlanet;
+		} else {		
+			return current_planet_id;
+		}
+	}
 	
 	// Prevent a planet switch if :
 	// (there were >= 2 errors while fetching planets OR if there's an error while fetching the current planet score)
@@ -698,18 +704,24 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 		difficulty_call = false;
 
 	var best_planet = GetBestPlanet();
+	
+	var now = new Date().getTime();
+	var lastGameStart = (current_game_start === undefined) ? now : current_game_start;
+	var timeDiff = (now - lastGameStart) / 1000;
 
-	if (best_planet !== undefined && best_planet !== null && best_planet !== current_planet_id) {
+	if (best_planet !== undefined && best_planet !== null && best_planet != current_planet_id) {
 		console.log("Planet #" + best_planet + " has higher XP potential. Switching to it. Bye planet #" + current_planet_id);
 		INJECT_switch_planet(best_planet, function() {
 			target_zone = GetBestZone();
 			INJECT_start_round(target_zone, access_token);
 		});
 	} else if (best_planet == current_planet_id) {
-		SwitchNextZone(0, difficulty_call);
+		if ((timeDiff >= 8 && difficulty_call == true) || difficulty_call == false)
+			SwitchNextZone(0, difficulty_call);
 	} else if (best_planet === null) {
 		console.log("Too many errors while searching a better planet. Let's continue on the current zone.");
-		INJECT_start_round(target_zone, access_token);
+		if ((timeDiff >= 8 && difficulty_call == true) || difficulty_call == false)
+			INJECT_start_round(target_zone, access_token);
 	} else {
 		console.log("There's no planet better than the current one.");
 	}
