@@ -10,7 +10,7 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 ### Features
 * Does not need to run the minigame at all, works from the main map.
 * Automatic switching between zones & planets for maximum experience.
-* Support boss zones.
+* Supports boss zones.
 * Easy & quick zone/planet override with the default map.
 * Sends the maximum score allowed for each zone difficulty.
 * Automatically repeats runs after completion.
