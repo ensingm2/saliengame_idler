@@ -383,7 +383,7 @@ var INJECT_report_boss_damage = function() {
 	var damageDone = Math.floor(Math.random() * 80);
 	var damageTaken = 0;
 	var now = (new Date().getTime()) / 1000;
-	var healDiff = (boss_options.last_heal !== undefined) ? (now - boss_options.last_heal) : 0;
+	var healDiff = (boss_options.last_heal !== undefined) ? (now - boss_options.last_heal) : 120;
 	var useHealing = (healDiff >= 120) ? 1 : 0;
 	gServer.ReportBossDamage(damageDone, damageTaken, useHealing, success, error);
 }
