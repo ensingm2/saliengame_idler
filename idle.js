@@ -354,9 +354,9 @@ var INJECT_report_boss_damage = function() {
 		if (results.response.waiting_for_players == true) {
 			gui.updateTask("Waiting for players...");
 		} else {
-			data.response.boss_status.boss_players.forEach( function(player) {
+			results.response.boss_status.boss_players.forEach( function(player) {
 				if (player.accountid == account_id) {
-					gui.updateTask("In boss battle. Boss HP left : " + data.response.boss_status.boss_hp + ". EXP earned : " + player.xp_earned);
+					gui.updateTask("In boss battle. Boss HP left : " + results.response.boss_status.boss_hp + ". EXP earned : " + player.xp_earned);
 					boss_options.last_heal = (player.time_last_heal !== undefined) ? player.time_last_heal : undefined;
 				}
 			});
