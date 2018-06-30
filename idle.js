@@ -551,11 +551,11 @@ function GetBestZone() {
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
-		if (!zone.captured) {
-			if (zone.boss) {
+		if (!zone.captured && !zone.boss) {
+			/*if (zone.boss) {
 				console.log("Zone " + idx + " with boss. Switching to it.");
 				return idx;
-			}
+			}*/
 
 			if(zone.difficulty > highestDifficulty) {
 				highestDifficulty = zone.difficulty;
