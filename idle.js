@@ -574,6 +574,7 @@ var INJECT_update_grid = function(error_handling) {
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.progress = zone.capture_progress; 
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.captured = zone.captured; 
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.difficulty = zone.difficulty; 
+				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.boss = zone.boss_active; 
 			});
 			last_update_grid = new Date().getTime();
 			console.log("Successfully updated map data on planet: " + current_planet_id);
@@ -636,8 +637,6 @@ function GetBestZone() {
 
 	if(bestZone !== undefined) {
 		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
-	} else {
-		console.log(window.gGame.m_State.m_Grid.m_Tiles); // DEBUG
 	}
 
 	return bestZone;
