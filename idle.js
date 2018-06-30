@@ -41,8 +41,7 @@ var boss_options = {
 	"update_freq": 5, // Number of seconds between calls to ReportBossDamage
 	"report_interval": undefined,
 	"error_count": 0,
-	"last_heal": undefined,
-	"battles_joined": [] // Boss battles already joined (you can't enter more than once)
+	"last_heal": undefined
 }
 var current_game_is_boss = false; // State if we're entering / in a boss battle or not
 
@@ -330,7 +329,6 @@ var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle
 				
 				if(is_boss_battle) {
 					boss_options.error_count = 0;
-					boss_options.battles_joined.push(target_zone);
 					boss_options.report_interval = setInterval(function() { INJECT_report_boss_damage(); }, boss_options.update_freq*1000);
 				} else {
 					INJECT_wait_for_end(resend_frequency);
@@ -359,14 +357,15 @@ var INJECT_report_boss_damage = function() {
 			results.response.boss_status.boss_players.forEach( function(player) {
 				if (player.accountid == account_id) {
 					if (player.hp > 0) {
-						gui.updateTask("In boss battle. Boss HP left : " + results.response.boss_status.boss_hp + ". EXP earned : " + player.xp_earned);
+						gui.updateTask("In boss battle. Boss HP left: " + results.response.boss_status.boss_hp + ". EXP earned: " + player.xp_earned + ". HP left: " + player.hp);
 					} else {
-						gui.updateTask("You died, ending boss fight. Boss HP left : " + results.response.boss_status.boss_hp + ". EXP earned : " + player.xp_earned);
+						gui.updateTask("You died, ending boss fight. Boss HP left: " + results.response.boss_status.boss_hp + ". EXP earned: " + player.xp_earned);
 						end_game();
 					}
 					boss_options.last_heal = (player.time_last_heal !== undefined) ? player.time_last_heal : undefined;
 				}
 			});
+			gui.progressbar.SetValue((results.response.boss_status.boss_max_hp - results.response.boss_status.boss_hp) / results.response.boss_status.boss_max_hp);
 		}
 	}
 	function error(results, eresult) {
@@ -390,8 +389,10 @@ var INJECT_report_boss_damage = function() {
 	var damageDone = Math.floor(Math.random() * 40);
 	var damageTaken = 0;
 	var now = (new Date().getTime()) / 1000;
-	var healDiff = (boss_options.last_heal !== undefined) ? (now - boss_options.last_heal) : 120;
-	var useHealing = (healDiff >= 120 && Math.random() >= 0.7) ? 1 : 0;
+	if (boss_options.last_heal === undefined)
+		boss_options.last_heal = now;
+	var healDiff = now - boss_options.last_heal;
+	var useHealing = (healDiff >= 120) ? 1 : 0;
 	gServer.ReportBossDamage(damageDone, damageTaken, useHealing, success, error);
 }
 
@@ -624,7 +625,7 @@ function GetBestZone() {
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
 		if (!zone.captured && zone.progress > 0) {
-			if (zone.boss && !boss_options.battles_joined.includes(idx)) {
+			if (zone.boss) {
 				console.log("Zone " + idx + " with boss. Switching to it.");
 				return [idx, zone.boss];
 			}
@@ -697,9 +698,9 @@ function GetBestPlanet() {
 				data.response.planets[0].zones.forEach( function ( zone ) {
 					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false) {
 						var zoneProgress = (zone.capture_progress === undefined) ? 0 : zone.capture_progress;
-						var zoneScore = Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zoneProgress)) + ((zone.boss_active && !boss_options.battles_joined.includes(zone.zone_position)) ? 10000000000 : 0);
+						var zoneScore = Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zoneProgress)) + ((zone.boss_active) ? 10000000000 : 0);
 						activePlanetsScore[planet_id] += isNaN(zoneScore) ? 0 : zoneScore;
-						if (zone.boss_active == true && !boss_options.battles_joined.includes(zone.zone_position))
+						if (zone.boss_active == true)
 							bossSpawned = true;
 						if (zone.difficulty > planetsMaxDifficulty[planet_id])
 							planetsMaxDifficulty[planet_id] = zone.difficulty;
