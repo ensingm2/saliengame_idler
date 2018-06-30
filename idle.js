@@ -479,7 +479,7 @@ var INJECT_end_round = function(attempt_no) {
 				// Restart the round if we have that variable set
 				if(loop_rounds) {
 					current_game_id = undefined;
-					INJECT_start_round(target_zone, access_token, 0, current_game_is_boss)
+					SwitchNextZone();
 				}
 			}
 		},
