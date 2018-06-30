@@ -37,6 +37,12 @@ var auto_switch_planet = {
 var gui; //local gui variable
 var start_button = false; // is start button already pressed?
 var animations_enabled = true;
+var boss_options = {
+	"update_freq": 5, // Number of seconds between calls to ReportBossDamage
+	"damage_done": 1, // EXP seems based on round duration, extend it as long as possible while still 'contributing'
+	"report_interval": undefined,
+	"error_count": 0
+}
 
 class BotGUI {
 	constructor(state) {
@@ -119,8 +125,10 @@ class BotGUI {
 		document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
 	}
 
-	updateZone(zone, progress, difficulty) {
+	updateZone(zone, progress, difficulty, is_boss_battle) {
 		var printString = zone;
+		if(is_boss_battle === undefined)
+			is_boss_battle = false;
 		if(progress !== undefined)
 			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
 		if(progress === undefined) {
@@ -135,7 +143,11 @@ class BotGUI {
 		}
 
 		document.getElementById('salienbot_zone').innerText = printString;
-		document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
+
+		if(is_boss_battle)
+			document.getElementById('salienbot_zone_difficulty').innerText = difficulty + "[BOSS]";
+		else
+			document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
 	}
 };
 
@@ -234,9 +246,11 @@ var INJECT_get_access_token = function() {
 }
 
 // Make the call to start a round, and kick-off the idle process
-var INJECT_start_round = function(zone, access_token, attempt_no) {
+var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle) {
 	if(attempt_no === undefined)
 		attempt_no = 0;
+	if(is_boss_battle === undefined)
+		is_boss_battle = false;
 
 	// Leave the game if we're already in one.
 	if(current_game_id !== undefined) {
@@ -244,11 +258,14 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 		INJECT_leave_round();
 	}
 
+	var postURL = "https://community.steam-api.com/ITerritoryControlMinigameService/JoinZone/v0001/";
+	if(is_boss_battle)
+		postURL = "https://community.steam-api.com/ITerritoryControlMinigameService/JoinBossZone/v0001/"
 	// Send the POST to join the game.
 	$J.ajax({
 		async: false,
 		type: "POST",
-		url: "https://community.steam-api.com/ITerritoryControlMinigameService/JoinZone/v0001/",
+		url: postURL,
 		data: { access_token: access_token, zone_position: zone },
 		tryCount : 0,
 		retryLimit : max_retry,
@@ -267,7 +284,8 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 					var errorId = jqXHR.getResponseHeader('x-eresult');
 					if (errorId == 11) {
 						var gameIdStuck = jqXHR.getResponseHeader('x-error_message').match(/\d+/)[0];
-						console.log("Stuck in the previous game area. Leaving it.");
+
+						console.log("Game has ended. Leaving it.");
 						current_game_id = gameIdStuck;
 						INJECT_leave_round();
 					} else {
@@ -287,13 +305,13 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 				
 				// Update the GUI
 				gui.updateStatus(true);
-				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
+				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty, is_boss_battle);
 				gui.updateEstimatedTime(calculateTimeToNextLevel());
 		
 				current_game_id = data.response.zone_info.gameid;
 				current_game_start = new Date().getTime();
 
-				if (auto_switch_planet.active == true) {
+				if (auto_switch_planet.active == true && !is_boss_battle) {
 					if (auto_switch_planet.current_difficulty != data.response.zone_info.difficulty)
 						auto_switch_planet.current_round = 0; // Difficulty changed, reset rounds counter before new planet check
 
@@ -309,7 +327,12 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 					}
 				}
 				
-				INJECT_wait_for_end(resend_frequency);
+				if(is_boss_battle){
+					boss_options.error_count = 0;
+					setInterval(function() { INJECT_report_boss_damage(); }, boss_options.update_freq*1000);
+				}
+				else
+					INJECT_wait_for_end(resend_frequency);
 			}
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -322,6 +345,26 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
+}
+
+var INJECT_report_boss_damage = function() {
+	function success(results) {
+		if (results.response.game_over)
+			end_game();
+	}
+	function error(results, eresult) {
+		if (eresult == 11 || boss_options.error_count >= max_retry)
+			end_game();
+		else
+			boss_options.error_count++;
+	}
+	function end_game() {
+		clearInterval(boss_options.report_interval);
+		boss_options.report_interval = undefined;
+		INJECT_leave_round();
+	}
+
+	gServer.ReportBossDamage(boss_options.damage_done, 0, 0, success, error);
 }
 
 // Update time remaining, and wait for the round to complete.
