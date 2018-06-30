@@ -329,7 +329,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle
 				
 				if(is_boss_battle) {
 					boss_options.error_count = 0;
-					report_interval = setInterval(function() { INJECT_report_boss_damage(); }, boss_options.update_freq*1000);
+					boss_options.report_interval = setInterval(function() { INJECT_report_boss_damage(); }, boss_options.update_freq*1000);
 				} else {
 					INJECT_wait_for_end(resend_frequency);
 				}
