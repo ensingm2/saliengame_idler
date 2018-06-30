@@ -689,7 +689,7 @@ function GetBestPlanet() {
 				data.response.planets[0].zones.forEach( function ( zone ) {
 					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false) {
 						var zoneProgress = (zone.capture_progress === undefined) ? 0 : zone.capture_progress;
-						var zoneScore = Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zoneProgress)) + (zone.boss ? 10000000000 : 0);
+						var zoneScore = Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zoneProgress)) + (zone.boss_active ? 10000000000 : 0);
 						activePlanetsScore[planet_id] += isNaN(zoneScore) ? 0 : zoneScore;
 						if (zone.difficulty > planetsMaxDifficulty[planet_id])
 							planetsMaxDifficulty[planet_id] = zone.difficulty;
