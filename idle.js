@@ -551,7 +551,7 @@ function GetBestZone() {
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
-		if (!zone.captured && !zone.boss) {
+		if (!zone.captured && !zone.boss && zone.progress > 0) {
 			/*if (zone.boss) {
 				console.log("Zone " + idx + " with boss. Switching to it.");
 				return idx;
