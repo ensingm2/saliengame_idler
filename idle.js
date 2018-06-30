@@ -636,6 +636,8 @@ function GetBestZone() {
 
 	if(bestZone !== undefined) {
 		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
+	} else {
+		console.log(window.gGame.m_State.m_Grid.m_Tiles); // DEBUG
 	}
 
 	return bestZone;
@@ -775,10 +777,7 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 	if (best_planet !== undefined && best_planet !== null && best_planet != current_planet_id) {
 		console.log("Planet #" + best_planet + " has higher XP potential. Switching to it. Bye planet #" + current_planet_id);
 		INJECT_switch_planet(best_planet, function() {
-			var currentBestZone = GetBestZone();
-			target_zone = currentBestZone[0];
-			current_game_is_boss = currentBestZone[1];
-			INJECT_start_round(target_zone, access_token, 0, current_game_is_boss);
+			SwitchNextZone(0, difficulty_call);
 		});
 	} else if (best_planet == current_planet_id) {
 		if ((timeDiff >= 8 && difficulty_call == true) || difficulty_call == false)
@@ -959,21 +958,18 @@ var INJECT_init_battle_selection = function() {
 			}
 
 			current_planet_id = window.gGame.m_State.m_PlanetData.id;
-
-			var first_zone;
-			if(target_zone === -1) {
-				var currentBestZone = GetBestZone();
-				first_zone = currentBestZone[0];
-				current_game_is_boss = currentBestZone[1];
-			} else {
-				first_zone = target_zone;
-				current_game_is_boss = window.gGame.m_State.m_Grid.m_Tiles[first_zone].Info.boss;
-			}
-
+			
 			if(access_token === undefined)
 				INJECT_get_access_token();
 
-			INJECT_start_round(first_zone, access_token, 0, current_game_is_boss);
+			var first_zone;
+			if(target_zone === -1) {
+				SwitchNextZone();
+			} else {
+				first_zone = target_zone;
+				current_game_is_boss = window.gGame.m_State.m_Grid.m_Tiles[first_zone].Info.boss;
+				INJECT_start_round(first_zone, access_token, 0, current_game_is_boss);
+			}
 		}
 	}
 
