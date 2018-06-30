@@ -649,6 +649,7 @@ function GetBestPlanet() {
 	var planetsMaxDifficulty = [];
 	var maxScore = 0;
 	var numberErrors = 0;
+	var bossSpawned = false;
 	
 	gui.updateStatus('Getting best planet');
 	
@@ -691,6 +692,8 @@ function GetBestPlanet() {
 						var zoneProgress = (zone.capture_progress === undefined) ? 0 : zone.capture_progress;
 						var zoneScore = Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zoneProgress)) + (zone.boss_active ? 10000000000 : 0);
 						activePlanetsScore[planet_id] += isNaN(zoneScore) ? 0 : zoneScore;
+						if (zone.boss_active == true)
+							bossSpawned = true;
 						if (zone.difficulty > planetsMaxDifficulty[planet_id])
 							planetsMaxDifficulty[planet_id] = zone.difficulty;
 					}
@@ -707,9 +710,9 @@ function GetBestPlanet() {
 	});
 	console.log(activePlanetsScore);
 	
-	// Check if the maximum difficulty available on the best planet is the same as the current one
+	// Check if the maximum difficulty available on the best planet is the same as the current one and no boss spawned
 	// If yes, no need to move. Except if max difficulty = 1 and score <= 20, we'll rush it for a new planet
-	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty) {
+	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty && bossSpawned == false) {
 		var lowScorePlanet = activePlanetsScore.findIndex(function(score) { return score <= 20; });
 		if (planetsMaxDifficulty[bestPlanetId] == 1 && lowScorePlanet !== -1) {
 			return lowScorePlanet;
