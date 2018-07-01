@@ -168,7 +168,7 @@ function initGUI(){
 		gui = new BotGUI({
 			level: gPlayerInfo.level,
 			exp: gPlayerInfo.score,
-			next_level_exp: gPlayerInfo.next_level_score
+			next_level_exp: (gPlayerInfo.next_level_score !== undefined) ? gPlayerInfo.next_level_score : "Infinite"
 		});
 
 		// Set our onclicks
@@ -482,7 +482,11 @@ var INJECT_end_round = function(attempt_no) {
 
 				// Update GUI
 				gui.updateLevel(data.response.new_level);
-				gui.updateExp(data.response.new_score + " / " + data.response.next_level_score);
+				if (gPlayerInfo.level == 25) {
+					gui.updateExp(data.response.new_score + " / Infinite");
+				} else {
+					gui.updateExp(data.response.new_score + " / " + data.response.next_level_score);
+				}
 				gui.updateEstimatedTime(calculateTimeToNextLevel());
 				gui.updateZone("None");
 
@@ -551,7 +555,7 @@ var INJECT_get_difficulty = function(zone_id) {
 }
 
 // Updates the player info
-// Currently unused. This was meant to hopefully update the UI.
+// Currently only used in INJECT_end_round. This was meant to hopefully update the UI.
 var INJECT_update_player_info = function() {
 	gServer.GetPlayerInfo(
 		function( results ) {
