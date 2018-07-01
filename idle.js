@@ -214,7 +214,7 @@ function ajaxErrorHandling(ajaxObj, params, messagesArray) {
 
 // Check the state of the game script and unlock it if needed
 function checkUnlockGameState() {
-	if (current_game_start === undefined)
+	if (current_game_start === undefined || (current_game_is_boss == true && boss_options.last_report === undefined))
 		return;
 	var now = new Date().getTime();
 	if (current_game_is_boss) {
@@ -393,6 +393,7 @@ var INJECT_report_boss_damage = function() {
 		clearInterval(boss_options.report_interval);
 		boss_options.report_interval = undefined;
 		boss_options.last_heal = undefined;
+		boss_options.last_report = undefined;
 		current_game_is_boss = false;
 		INJECT_leave_round();
 		
