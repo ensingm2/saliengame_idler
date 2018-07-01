@@ -45,7 +45,6 @@ var boss_options = {
 	"last_report": undefined // Used in the check of the game script state and unlock it if needed 
 }
 var current_game_is_boss = false; // State if we're entering / in a boss battle or not
-var avoid_boss = false; // We'll set it to true if you're almost level 25 so you can get your remaining level-based items.
 
 class BotGUI {
 	constructor(state) {
@@ -356,27 +355,25 @@ var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle
 var INJECT_report_boss_damage = function() {
 	function success(results) {
 		boss_options.last_report = new Date().getTime();
-		if (results.response.game_over)
+		if (results.response.game_over) {
 			end_game();
-		if (results.response.waiting_for_players == true) {
+		} else if (results.response.waiting_for_players == true) {
 			gui.updateTask("Waiting for players...");
 		} else {
 			results.response.boss_status.boss_players.forEach( function(player) {
 				if (player.accountid == account_id) {
+					if (player.time_last_heal !== undefined)
+						boss_options.last_heal = player.time_last_heal;
+					
 					if (player.hp > 0) {
-						if ((parseInt(gPlayerInfo.score) + parseInt(player.xp_earned)) >= 26390000) {
-							avoid_boss = true;
-							gui.updateTask("You're very close to reach level 25. Exiting boss fight to prevent you to not get level-based items.");
+						gui.updateTask("In boss battle. Boss HP left: " + results.response.boss_status.boss_hp + ". EXP earned: " + player.xp_earned + ". HP left: " + player.hp);
+						if (results.response.boss_status.boss_hp == 0) {
 							end_game();
-						} else {
-							gui.updateTask("In boss battle. Boss HP left: " + results.response.boss_status.boss_hp + ". EXP earned: " + player.xp_earned + ". HP left: " + player.hp);
 						}
 					} else {
 						gui.updateTask("You died, ending boss fight. Boss HP left: " + results.response.boss_status.boss_hp + ". EXP earned: " + player.xp_earned);
 						end_game();
 					}
-					if (player.time_last_heal !== undefined)
-						boss_options.last_heal = player.time_last_heal;
 				}
 			});
 			gui.progressbar.SetValue((results.response.boss_status.boss_max_hp - results.response.boss_status.boss_hp) / results.response.boss_status.boss_max_hp);
@@ -493,9 +490,6 @@ var INJECT_end_round = function(attempt_no) {
 				gui.updateExp(data.response.new_score + " / " + data.response.next_level_score);
 				gui.updateEstimatedTime(calculateTimeToNextLevel());
 				gui.updateZone("None");
-				
-				// Avoid bosses if we're near level 25
-				avoid_boss = (gPlayerInfo.score >= 26390000 && gPlayerInfo.score < 26400000);
 
 				// Restart the round if we have that variable set
 				if(loop_rounds) {
@@ -645,7 +639,7 @@ function GetBestZone() {
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
 		if (!zone.captured && zone.progress > 0) {
-			if (zone.boss && !avoid_boss) {
+			if (zone.boss) {
 				console.log("Zone " + idx + " with boss. Switching to it.");
 				return [idx, zone.boss];
 			}
@@ -718,9 +712,9 @@ function GetBestPlanet() {
 				data.response.planets[0].zones.forEach( function ( zone ) {
 					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false) {
 						var zoneProgress = (zone.capture_progress === undefined) ? 0 : zone.capture_progress;
-						var zoneScore = Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zoneProgress)) + ((zone.boss_active && !avoid_boss) ? 10000000000 : 0);
+						var zoneScore = Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zoneProgress)) + ((zone.boss_active) ? 10000000000 : 0);
 						activePlanetsScore[planet_id] += isNaN(zoneScore) ? 0 : zoneScore;
-						if (zone.boss_active == true && !avoid_boss)
+						if (zone.boss_active == true)
 							bossSpawned = true;
 						if (zone.difficulty > planetsMaxDifficulty[planet_id])
 							planetsMaxDifficulty[planet_id] = zone.difficulty;
@@ -1062,9 +1056,6 @@ var INJECT_init_planet_selection = function() {
 var INJECT_init = function() {
 	// Set Account ID
 	account_id = gAccountID;
-	
-	// Avoid bosses if we're near level 25
-	avoid_boss = (gPlayerInfo.score >= 26390000 && gPlayerInfo.score < 26400000);
 	
 	if (gGame.m_State instanceof CBattleSelectionState)
 		INJECT_init_battle_selection();
