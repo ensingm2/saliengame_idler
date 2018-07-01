@@ -369,7 +369,8 @@ var INJECT_report_boss_damage = function() {
 						gui.updateTask("You died, ending boss fight. Boss HP left: " + results.response.boss_status.boss_hp + ". EXP earned: " + player.xp_earned);
 						end_game();
 					}
-					boss_options.last_heal = (player.time_last_heal !== undefined) ? player.time_last_heal : undefined;
+					if (player.time_last_heal !== undefined)
+						boss_options.last_heal = player.time_last_heal;
 				}
 			});
 			gui.progressbar.SetValue((results.response.boss_status.boss_max_hp - results.response.boss_status.boss_hp) / results.response.boss_status.boss_max_hp);
@@ -397,7 +398,7 @@ var INJECT_report_boss_damage = function() {
 	var damageTaken = 0;
 	var now = (new Date().getTime()) / 1000;
 	if (boss_options.last_heal === undefined)
-		boss_options.last_heal = now;
+		boss_options.last_heal = now - Math.floor(Math.random() * 40);
 	var healDiff = now - boss_options.last_heal;
 	var useHealing = (healDiff >= 120) ? 1 : 0;
 	gServer.ReportBossDamage(damageDone, damageTaken, useHealing, success, error);
