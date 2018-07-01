@@ -30,9 +30,7 @@ var last_update_grid = undefined; // Last time we updated the grid (to avoid too
 var check_game_state = undefined; // Check the state of the game script and unlock it if needed (setInterval)
 var auto_switch_planet = {
 	"active": true, // Automatically switch to the best planet available (true : yes, false : no)
-	"current_difficulty": undefined,
-	"rounds_before_check": 1, // We start a planets check in this amount of rounds
-	"current_round": 0
+	"current_difficulty": undefined
 };
 var gui; //local gui variable
 var start_button = false; // is start button already pressed?
@@ -318,18 +316,10 @@ var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle
 				current_game_id = data.response.zone_info.gameid;
 				current_game_start = new Date().getTime();
 
-				if (auto_switch_planet.active == true && !is_boss_battle) {
-					if (auto_switch_planet.current_difficulty != data.response.zone_info.difficulty)
-						auto_switch_planet.current_round = 0; // Difficulty changed, reset rounds counter before new planet check
-
+				if (auto_switch_planet.active == true) {
 					auto_switch_planet.current_difficulty = data.response.zone_info.difficulty;
-
-					if (auto_switch_planet.current_round >= auto_switch_planet.rounds_before_check) {
-						auto_switch_planet.current_round = 0;
+					if (!is_boss_battle)
 						CheckSwitchBetterPlanet(true);
-					} else {
-						auto_switch_planet.current_round++;
-					}
 				}
 				
 				if(is_boss_battle) {
@@ -790,11 +780,11 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 	if (difficulty_call === undefined)
 		difficulty_call = false;
 
-	var best_planet = GetBestPlanet();
-	
 	var now = new Date().getTime();
 	var lastGameStart = (current_game_start === undefined) ? now : current_game_start;
 	var timeDiff = (now - lastGameStart) / 1000;
+	
+	var best_planet = GetBestPlanet();
 
 	if (best_planet !== undefined && best_planet !== null && best_planet != current_planet_id) {
 		console.log("Planet #" + best_planet + " has higher XP potential. Switching to it. Bye planet #" + current_planet_id);
