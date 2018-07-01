@@ -103,6 +103,10 @@ class BotGUI {
 	}
 
 	updateEstimatedTime(secondsLeft) {
+		if (secondsLeft == -1) {
+			document.getElementById('salienbot_esttimlvl').innerText = "Max level reached";
+			return;
+		}
 		let date = new Date(null);
 		date.setSeconds(secondsLeft);
 		var result = date.toISOString().substr(8, 11).split(/[T:]/);
@@ -185,7 +189,10 @@ function initGUI(){
 	}
 };
 
-function calculateTimeToNextLevel() {	
+function calculateTimeToNextLevel() {
+	if (gPlayerInfo.level == 25)
+		return -1;
+	
 	const nextScoreAmount = get_max_score(target_zone);	
 	const missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount;
 	const roundTime = resend_frequency + update_length;
