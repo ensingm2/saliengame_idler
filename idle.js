@@ -41,7 +41,8 @@ var boss_options = {
 	"update_freq": 5, // Number of seconds between calls to ReportBossDamage
 	"report_interval": undefined,
 	"error_count": 0,
-	"last_heal": undefined
+	"last_heal": undefined,
+	"last_report": undefined // Used in the check of the game script state and unlock it if needed 
 }
 var current_game_is_boss = false; // State if we're entering / in a boss battle or not
 var avoid_boss = false; // We'll set it to true if you're almost level 25 so you can get your remaining level-based items.
@@ -216,9 +217,13 @@ function checkUnlockGameState() {
 	if (current_game_start === undefined)
 		return;
 	var now = new Date().getTime();
-	var timeDiff = (now - current_game_start) / 1000;
+	if (current_game_is_boss) {
+		var timeDiff = (now - boss_options.last_report) / 1000;
+	} else {
+		var timeDiff = (now - current_game_start) / 1000;
+	}
 	var maxWait = 300; // Time (in seconds) to wait until we try to unlock the script
-	if ((current_game_is_boss == false && timeDiff < maxWait) || current_game_is_boss == true && timeDiff < (maxWait*20))
+	if (timeDiff < maxWait)
 		return;
 	gui.updateTask("Detected the game script is locked. Trying to unlock it.");
 	if (auto_switch_planet.active == true) {
@@ -350,6 +355,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle
 
 var INJECT_report_boss_damage = function() {
 	function success(results) {
+		boss_options.last_report = new Date().getTime();
 		if (results.response.game_over)
 			end_game();
 		if (results.response.waiting_for_players == true) {
@@ -387,6 +393,7 @@ var INJECT_report_boss_damage = function() {
 		clearInterval(boss_options.report_interval);
 		boss_options.report_interval = undefined;
 		boss_options.last_heal = undefined;
+		current_game_is_boss = false;
 		INJECT_leave_round();
 		
 		if (auto_switch_planet.active == true)
