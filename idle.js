@@ -355,9 +355,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle
 var INJECT_report_boss_damage = function() {
 	function success(results) {
 		boss_options.last_report = new Date().getTime();
-		if (results.response.game_over) {
-			end_game();
-		} else if (results.response.waiting_for_players == true) {
+		if (results.response.waiting_for_players == true) {
 			gui.updateTask("Waiting for players...");
 		} else {
 			results.response.boss_status.boss_players.forEach( function(player) {
@@ -367,7 +365,7 @@ var INJECT_report_boss_damage = function() {
 					
 					if (player.hp > 0) {
 						gui.updateTask("In boss battle. Boss HP left: " + results.response.boss_status.boss_hp + ". EXP earned: " + player.xp_earned + ". HP left: " + player.hp);
-						if (results.response.boss_status.boss_hp == 0) {
+						if (results.response.boss_status.boss_hp == 0 || results.response.game_over) {
 							end_game();
 						}
 					} else {
