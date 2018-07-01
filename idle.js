@@ -65,7 +65,7 @@ class BotGUI {
 				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
 				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
 				`<p><b>Target Zone:</b> <span id="salienbot_zone">None</span></p>`,
-				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span> (<span id="salienbot_zone_score"></span>xp/round)</p>`,
+				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span> <span id="salienbot_zone_score"></span></p>`,
 				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + " / " + this.state.next_level_exp + '</span></p>',
 				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
 				'<p><input id="planetSwitchCheckbox" type="checkbox"/> Automatic Planet Switching</p>',
@@ -133,25 +133,28 @@ class BotGUI {
 		var printString = zone;
 		if(is_boss_battle === undefined)
 			is_boss_battle = false;
-		if(progress !== undefined)
-			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
-		if(progress === undefined) {
+		if(progress === undefined && !is_boss_battle) {
 			$J("#salienbot_zone_difficulty_div").hide();
 			difficulty = "";
 		}
 		else {
 			$J("#salienbot_zone_difficulty_div").show();
 			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar);
-			
-			document.getElementById('salienbot_zone_score').innerText = get_max_score(zone);
+
+			if(is_boss_battle) {
+				$J("#salienbot_zone_score").hide();
+				document.getElementById('salienbot_zone_difficulty').innerText = "[BOSS]";
+			}
+			else {
+				$J("#salienbot_zone_score").show();
+				document.getElementById('salienbot_zone_score').innerText = "(" + get_max_score(zone) + "xp/round)";
+
+				document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
+				printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
+			}
 		}
 
 		document.getElementById('salienbot_zone').innerText = printString;
-
-		if(is_boss_battle)
-			document.getElementById('salienbot_zone_difficulty').innerText = difficulty + "[BOSS]";
-		else
-			document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
 	}
 };
 
