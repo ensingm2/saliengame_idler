@@ -386,6 +386,7 @@ var INJECT_report_boss_damage = function() {
 		gui.updateTask("Boss battle finished. Searching a new planet / zone.");
 		clearInterval(boss_options.report_interval);
 		boss_options.report_interval = undefined;
+		boss_options.last_heal = undefined;
 		INJECT_leave_round();
 		
 		if (auto_switch_planet.active == true)
