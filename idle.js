@@ -18,6 +18,7 @@ var update_length = 1; // How long to wait between updates (In Seconds)
 var loop_rounds = true;
 var language = "english"; // Used when POSTing scores
 var access_token = "";
+var account_id = undefined; // Used to get data back in boss battles
 var current_game_id = undefined;
 var current_game_start = undefined; // Timestamp for when the current game started
 var time_passed_ms = 0;
@@ -30,13 +31,19 @@ var check_game_state = undefined; // Check the state of the game script and unlo
 var auto_switch_planet = {
 	"active": true, // Automatically switch to the best planet available (true : yes, false : no)
 	"current_difficulty": undefined,
-	"wanted_difficulty": 3, // Difficulty prefered. Will check planets if the current one differs
-	"rounds_before_check": 3, // If we're not in a wanted difficulty zone, we start a planets check in this amount of rounds
+	"rounds_before_check": 1, // We start a planets check in this amount of rounds
 	"current_round": 0
 };
 var gui; //local gui variable
 var start_button = false; // is start button already pressed?
 var animations_enabled = true;
+var boss_options = {
+	"update_freq": 5, // Number of seconds between calls to ReportBossDamage
+	"report_interval": undefined,
+	"error_count": 0,
+	"last_heal": undefined
+}
+var current_game_is_boss = false; // State if we're entering / in a boss battle or not
 
 class BotGUI {
 	constructor(state) {
@@ -119,8 +126,10 @@ class BotGUI {
 		document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
 	}
 
-	updateZone(zone, progress, difficulty) {
+	updateZone(zone, progress, difficulty, is_boss_battle) {
 		var printString = zone;
+		if(is_boss_battle === undefined)
+			is_boss_battle = false;
 		if(progress !== undefined)
 			printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
 		if(progress === undefined) {
@@ -129,13 +138,17 @@ class BotGUI {
 		}
 		else {
 			$J("#salienbot_zone_difficulty_div").show();
-			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar)
+			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar);
 			
 			document.getElementById('salienbot_zone_score').innerText = get_max_score(zone);
 		}
 
 		document.getElementById('salienbot_zone').innerText = printString;
-		document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
+
+		if(is_boss_battle)
+			document.getElementById('salienbot_zone_difficulty').innerText = difficulty + "[BOSS]";
+		else
+			document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
 	}
 };
 
@@ -204,7 +217,7 @@ function checkUnlockGameState() {
 	var now = new Date().getTime();
 	var timeDiff = (now - current_game_start) / 1000;
 	var maxWait = 300; // Time (in seconds) to wait until we try to unlock the script
-	if (timeDiff < maxWait)
+	if ((current_game_is_boss == false && timeDiff < maxWait) || current_game_is_boss == true && timeDiff < (maxWait*20))
 		return;
 	gui.updateTask("Detected the game script is locked. Trying to unlock it.");
 	if (auto_switch_planet.active == true) {
@@ -234,9 +247,11 @@ var INJECT_get_access_token = function() {
 }
 
 // Make the call to start a round, and kick-off the idle process
-var INJECT_start_round = function(zone, access_token, attempt_no) {
+var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle) {
 	if(attempt_no === undefined)
 		attempt_no = 0;
+	if(is_boss_battle === undefined)
+		is_boss_battle = false;
 
 	// Leave the game if we're already in one.
 	if(current_game_id !== undefined) {
@@ -244,11 +259,14 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 		INJECT_leave_round();
 	}
 
+	var postURL = "https://community.steam-api.com/ITerritoryControlMinigameService/JoinZone/v0001/";
+	if(is_boss_battle)
+		postURL = "https://community.steam-api.com/ITerritoryControlMinigameService/JoinBossZone/v0001/"
 	// Send the POST to join the game.
 	$J.ajax({
 		async: false,
 		type: "POST",
-		url: "https://community.steam-api.com/ITerritoryControlMinigameService/JoinZone/v0001/",
+		url: postURL,
 		data: { access_token: access_token, zone_position: zone },
 		tryCount : 0,
 		retryLimit : max_retry,
@@ -267,7 +285,8 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 					var errorId = jqXHR.getResponseHeader('x-eresult');
 					if (errorId == 11) {
 						var gameIdStuck = jqXHR.getResponseHeader('x-error_message').match(/\d+/)[0];
-						console.log("Stuck in the previous game area. Leaving it.");
+
+						console.log("Game has ended. Leaving it.");
 						current_game_id = gameIdStuck;
 						INJECT_leave_round();
 					} else {
@@ -275,7 +294,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 					}
 					gui.updateTask("Waiting 5s and re-sending join attempt (Attempt #" + (attempt_no + 1) + ").");
 					clearTimeout(current_timeout);
-					current_timeout = setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1); }, 5000);
+					current_timeout = setTimeout(function() { INJECT_start_round(zone, access_token, attempt_no+1, current_game_is_boss); }, 5000);
 				}
 			}
 			else {
@@ -284,32 +303,36 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 
 				// Set target
 				target_zone = zone;
+				current_game_is_boss = window.gGame.m_State.m_Grid.m_Tiles[target_zone].Info.boss;
 				
 				// Update the GUI
 				gui.updateStatus(true);
-				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty);
+				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty, is_boss_battle);
 				gui.updateEstimatedTime(calculateTimeToNextLevel());
 		
 				current_game_id = data.response.zone_info.gameid;
 				current_game_start = new Date().getTime();
 
-				if (auto_switch_planet.active == true) {
+				if (auto_switch_planet.active == true && !is_boss_battle) {
 					if (auto_switch_planet.current_difficulty != data.response.zone_info.difficulty)
 						auto_switch_planet.current_round = 0; // Difficulty changed, reset rounds counter before new planet check
 
 					auto_switch_planet.current_difficulty = data.response.zone_info.difficulty;
 
-					if (auto_switch_planet.current_difficulty < auto_switch_planet.wanted_difficulty) {
-						if (auto_switch_planet.current_round >= auto_switch_planet.rounds_before_check) {
-							auto_switch_planet.current_round = 0;
-							CheckSwitchBetterPlanet(true);
-						} else {
-							auto_switch_planet.current_round++;
-						}
+					if (auto_switch_planet.current_round >= auto_switch_planet.rounds_before_check) {
+						auto_switch_planet.current_round = 0;
+						CheckSwitchBetterPlanet(true);
+					} else {
+						auto_switch_planet.current_round++;
 					}
 				}
 				
-				INJECT_wait_for_end(resend_frequency);
+				if(is_boss_battle) {
+					boss_options.error_count = 0;
+					boss_options.report_interval = setInterval(function() { INJECT_report_boss_damage(); }, boss_options.update_freq*1000);
+				} else {
+					INJECT_wait_for_end(resend_frequency);
+				}
 			}
 		},
 		error: function (xhr, ajaxOptions, thrownError) {
@@ -322,6 +345,55 @@ var INJECT_start_round = function(zone, access_token, attempt_no) {
 			ajaxErrorHandling(this, ajaxParams, messagesArray);
 		}
 	});
+}
+
+var INJECT_report_boss_damage = function() {
+	function success(results) {
+		if (results.response.game_over)
+			end_game();
+		if (results.response.waiting_for_players == true) {
+			gui.updateTask("Waiting for players...");
+		} else {
+			results.response.boss_status.boss_players.forEach( function(player) {
+				if (player.accountid == account_id) {
+					if (player.hp > 0) {
+						gui.updateTask("In boss battle. Boss HP left: " + results.response.boss_status.boss_hp + ". EXP earned: " + player.xp_earned + ". HP left: " + player.hp);
+					} else {
+						gui.updateTask("You died, ending boss fight. Boss HP left: " + results.response.boss_status.boss_hp + ". EXP earned: " + player.xp_earned);
+						end_game();
+					}
+					boss_options.last_heal = (player.time_last_heal !== undefined) ? player.time_last_heal : undefined;
+				}
+			});
+			gui.progressbar.SetValue((results.response.boss_status.boss_max_hp - results.response.boss_status.boss_hp) / results.response.boss_status.boss_max_hp);
+		}
+	}
+	function error(results, eresult) {
+		if (eresult == 11 || boss_options.error_count >= max_retry)
+			end_game();
+		else
+			boss_options.error_count++;
+	}
+	function end_game() {
+		gui.updateTask("Boss battle finished. Searching a new planet / zone.");
+		clearInterval(boss_options.report_interval);
+		boss_options.report_interval = undefined;
+		INJECT_leave_round();
+		
+		if (auto_switch_planet.active == true)
+			CheckSwitchBetterPlanet();
+		else
+			SwitchNextZone();
+	}
+
+	var damageDone = Math.floor(Math.random() * 40);
+	var damageTaken = 0;
+	var now = (new Date().getTime()) / 1000;
+	if (boss_options.last_heal === undefined)
+		boss_options.last_heal = now;
+	var healDiff = now - boss_options.last_heal;
+	var useHealing = (healDiff >= 120) ? 1 : 0;
+	gServer.ReportBossDamage(damageDone, damageTaken, useHealing, success, error);
 }
 
 // Update time remaining, and wait for the round to complete.
@@ -510,6 +582,7 @@ var INJECT_update_grid = function(error_handling) {
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.progress = zone.capture_progress; 
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.captured = zone.captured; 
 				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.difficulty = zone.difficulty; 
+				window.gGame.m_State.m_Grid.m_Tiles[zone.zone_position].Info.boss = zone.boss_active; 
 			});
 			last_update_grid = new Date().getTime();
 			console.log("Successfully updated map data on planet: " + current_planet_id);
@@ -544,49 +617,47 @@ function get_max_score(zone, round_duration) {
 
 // Get the best zone available
 function GetBestZone() {
-	var bestZoneIdx;
+	var bestZone;
 	var highestDifficulty = -1;
 
 	gui.updateTask('Getting best zone');
 
 	for (var idx = 0; idx < window.gGame.m_State.m_Grid.m_Tiles.length; idx++) {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
-		if (!zone.captured && !zone.boss && zone.progress > 0) {
-			/*if (zone.boss) {
+		if (!zone.captured && zone.progress > 0) {
+			if (zone.boss) {
 				console.log("Zone " + idx + " with boss. Switching to it.");
-				return idx;
-			}*/
+				return [idx, zone.boss];
+			}
 
 			if(zone.difficulty > highestDifficulty) {
 				highestDifficulty = zone.difficulty;
 				maxProgress = zone.progress;
-				bestZoneIdx = idx;
+				bestZone = [idx, zone.boss];
 			} else if(zone.difficulty < highestDifficulty) continue;
 
 			if(zone.progress < maxProgress) {
 				maxProgress = zone.progress;
-				bestZoneIdx = idx;
+				bestZone = [idx, zone.boss];
 			}
 		}
 	}
 
-	if(bestZoneIdx !== undefined) {
-		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZoneIdx} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZoneIdx].Info.difficulty}`);
+	if(bestZone !== undefined) {
+		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
 	}
 
-	return bestZoneIdx;
+	return bestZone;
 }
 
 // Get the best planet available
 function GetBestPlanet() {
-	// No need to move if we're already in a zone with the wanted difficulty
-	if(auto_switch_planet.current_difficulty == auto_switch_planet.wanted_difficulty)
-		return current_planet_id;
 	var bestPlanetId = undefined;
 	var activePlanetsScore = [];
 	var planetsMaxDifficulty = [];
 	var maxScore = 0;
 	var numberErrors = 0;
+	var bossSpawned = false;
 	
 	gui.updateStatus('Getting best planet');
 	
@@ -627,8 +698,10 @@ function GetBestPlanet() {
 				data.response.planets[0].zones.forEach( function ( zone ) {
 					if (zone.difficulty >= 1 && zone.difficulty <= 7 && zone.captured == false) {
 						var zoneProgress = (zone.capture_progress === undefined) ? 0 : zone.capture_progress;
-						var zoneScore = Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zoneProgress));
+						var zoneScore = Math.ceil(Math.pow(10, (zone.difficulty - 1) * 2) * (1 - zoneProgress)) + ((zone.boss_active) ? 10000000000 : 0);
 						activePlanetsScore[planet_id] += isNaN(zoneScore) ? 0 : zoneScore;
+						if (zone.boss_active == true)
+							bossSpawned = true;
 						if (zone.difficulty > planetsMaxDifficulty[planet_id])
 							planetsMaxDifficulty[planet_id] = zone.difficulty;
 					}
@@ -645,9 +718,9 @@ function GetBestPlanet() {
 	});
 	console.log(activePlanetsScore);
 	
-	// Check if the maximum difficulty available on the best planet is the same as the current one
+	// Check if the maximum difficulty available on the best planet is the same as the current one and no boss spawned
 	// If yes, no need to move. Except if max difficulty = 1 and score <= 20, we'll rush it for a new planet
-	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty) {
+	if ((current_planet_id in activePlanetsScore) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty && bossSpawned == false) {
 		var lowScorePlanet = activePlanetsScore.findIndex(function(score) { return score <= 20; });
 		if (planetsMaxDifficulty[bestPlanetId] == 1 && lowScorePlanet !== -1) {
 			return lowScorePlanet;
@@ -659,7 +732,7 @@ function GetBestPlanet() {
 	// Prevent a planet switch if :
 	// (there were >= 2 errors while fetching planets OR if there's an error while fetching the current planet score)
 	// AND the max difficulty available on best planet found is <= current difficulty
-	if ((numberErrors >= 2 || ((current_planet_id in activePlanetsScore) && activePlanetsScore[current_planet_id] == 0)) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty)
+	if ((numberErrors >= 2 || ((current_planet_id in activePlanetsScore) && activePlanetsScore[current_planet_id] == 0)) && planetsMaxDifficulty[bestPlanetId] <= auto_switch_planet.current_difficulty && bossSpawned == false)
 		return null;
 	
 	return bestPlanetId;
@@ -673,16 +746,18 @@ function SwitchNextZone(attempt_no, planet_call) {
 		planet_call = false;
 
 	INJECT_update_grid();
-	var next_zone = GetBestZone();
+	var currentBestZone = GetBestZone();
+	var next_zone = currentBestZone[0];
 
 	if (next_zone !== undefined) {
 		if (next_zone != target_zone) {
 			console.log("Found new best zone: " + next_zone);
-			INJECT_start_round(next_zone, access_token, attempt_no);
+			current_game_is_boss = currentBestZone[1];
+			INJECT_start_round(next_zone, access_token, attempt_no, current_game_is_boss);
 		} else {
 			console.log("Current zone #" + target_zone + " is already the best. No need to switch.");
-			//if (planet_call === true)
-				INJECT_start_round(target_zone, access_token, attempt_no);
+			current_game_is_boss = currentBestZone[1];
+			INJECT_start_round(target_zone, access_token, attempt_no, current_game_is_boss);
 		}
 	} else {
 		if (auto_switch_planet.active == true) {
@@ -712,8 +787,7 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 	if (best_planet !== undefined && best_planet !== null && best_planet != current_planet_id) {
 		console.log("Planet #" + best_planet + " has higher XP potential. Switching to it. Bye planet #" + current_planet_id);
 		INJECT_switch_planet(best_planet, function() {
-			target_zone = GetBestZone();
-			INJECT_start_round(target_zone, access_token);
+			SwitchNextZone(0, difficulty_call);
 		});
 	} else if (best_planet == current_planet_id) {
 		if ((timeDiff >= 8 && difficulty_call == true) || difficulty_call == false)
@@ -721,7 +795,7 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 	} else if (best_planet === null) {
 		console.log("Too many errors while searching a better planet. Let's continue on the current zone.");
 		if ((timeDiff >= 8 && difficulty_call == true) || difficulty_call == false)
-			INJECT_start_round(target_zone, access_token);
+			INJECT_start_round(target_zone, access_token, 0, current_game_is_boss);
 	} else {
 		console.log("There's no planet better than the current one.");
 	}
@@ -894,24 +968,26 @@ var INJECT_init_battle_selection = function() {
 			}
 
 			current_planet_id = window.gGame.m_State.m_PlanetData.id;
-
-			var first_zone;
-			if(target_zone === -1)
-				first_zone = GetBestZone();
-			else
-				first_zone = target_zone
-
+			
 			if(access_token === undefined)
 				INJECT_get_access_token();
 
-			INJECT_start_round(first_zone, access_token);
+			var first_zone;
+			if(target_zone === -1) {
+				SwitchNextZone();
+			} else {
+				first_zone = target_zone;
+				current_game_is_boss = window.gGame.m_State.m_Grid.m_Tiles[first_zone].Info.boss;
+				INJECT_start_round(first_zone, access_token, 0, current_game_is_boss);
+			}
 		}
 	}
 
 	// Overwrite join function so clicking on a grid square will run our code instead
 	gServer.JoinZone = function (zone_id, callback, error_callback) {
 		current_planet_id = window.gGame.m_State.m_PlanetData.id;
-		INJECT_start_round(zone_id, access_token);
+		current_game_is_boss = window.gGame.m_State.m_Grid.m_Tiles[zone_id].Info.boss;
+		INJECT_start_round(zone_id, access_token, 0, current_game_is_boss);
 	}
 
 	// Hook the Grid click function
@@ -932,13 +1008,14 @@ var INJECT_init_battle_selection = function() {
 
 		// Update the GUI
 		gui.updateTask("Attempting manual switch to Zone #" + zoneIdx);
-		gui.progressbar.parent.removeChild(gui.progressbar)
+		gui.progressbar.parent.removeChild(gui.progressbar);
 
 		// Leave existing round
 		INJECT_leave_round();
 
 		// Join new round
-		INJECT_start_round(zoneIdx, access_token);
+		current_game_is_boss = window.gGame.m_State.m_Grid.m_Tiles[zoneIdx].Info.boss;
+		INJECT_start_round(zoneIdx, access_token, 0, current_game_is_boss);
 	}
 
 	// Hook the Leave Planet Button
@@ -963,6 +1040,9 @@ var INJECT_init_planet_selection = function() {
 };
 
 var INJECT_init = function() {
+	// Set Account ID
+	account_id = gAccountID;
+	
 	if (gGame.m_State instanceof CBattleSelectionState)
 		INJECT_init_battle_selection();
 	else if (gGame.m_State instanceof CPlanetSelectionState)
@@ -992,7 +1072,7 @@ var INJECT_toggle_animations = function(enabled) {
 $J(document).ready(function() {
 	// Auto-grab the access token
 	INJECT_get_access_token();
-
+	
 	// Call our global init function
 	initGUI();
 })
