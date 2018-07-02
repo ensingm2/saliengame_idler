@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name		Ensingm2 Salien Bot Idles
+// @name		Ensingm2 Salien Game Idler
 // @namespace	https://github.com/ensingm2/saliengame_idler
 // @version		0.0.18
 // @author		ensingm2
@@ -638,8 +638,7 @@ function get_max_score(zone, round_duration) {
 
 // Get the best zone available
 function GetBestZone() {
-	var bestZone;
-	var highestDifficulty = maxProgress = -1;
+	var bestZone, highestDifficulty = maxProgress = -1;
 
 	gui.updateTask('Getting best zone');
 
@@ -651,7 +650,7 @@ function GetBestZone() {
 				return [idx, zone.boss];
 			}
 			
-			if(zone.difficulty > highestDifficulty && zone.progress > maxProgress) {
+			if(zone.difficulty >= highestDifficulty && zone.progress > maxProgress) {
 				highestDifficulty = zone.difficulty;
 				maxProgress = zone.progress;
 				bestZone = [idx, zone.boss];
@@ -661,13 +660,7 @@ function GetBestZone() {
 	}
 
 	if(bestZone !== undefined) {
-		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
-	} else {
-		// Since the zone 0 on planet 38 issue we don't join a zone with capture progress = 0
-		// Joining a random zone instead to avoid a 5 min. break when switching to a fresh new planet
-		var randomZone = Math.floor(Math.random() * 96);
-		bestZone = [randomZone, window.gGame.m_State.m_Grid.m_Tiles[randomZone].Info.boss];
-		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Random zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
+		//console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
 	}
 	return bestZone;
 }
@@ -821,6 +814,16 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 	} else {
 		console.log("There's no planet better than the current one.");
 	}
+	// Hide the game again
+	/*$J('#animationsCheckbox').change(function() {		
+		});
+		$J('#animationsCheckbox').prop('checked', !animations_enabled);
+
+	*/
+	if($J('#animationsCheckbox').prop('checked'))
+	{
+		INJECT_toggle_animations(!this.checked);
+	}		
 }
 
 var INJECT_switch_planet = function(planet_id, callback) {
