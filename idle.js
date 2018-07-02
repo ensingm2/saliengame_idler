@@ -412,7 +412,7 @@ var INJECT_report_boss_damage = function() {
 			SwitchNextZone();
 	}
 
-	var damageDone = Math.floor(Math.random() * 40);
+	var damageDone = 1; //Math.floor(Math.random() * 40);
 	var damageTaken = 0;
 	var now = (new Date().getTime()) / 1000;
 	if (boss_options.last_heal === undefined)
