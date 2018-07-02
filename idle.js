@@ -40,7 +40,8 @@ var boss_options = {
 	"report_interval": undefined,
 	"error_count": 0,
 	"last_heal": undefined,
-	"last_report": undefined // Used in the check of the game script state and unlock it if needed 
+	"last_report": undefined, // Used in the check of the game script state and unlock it if needed 
+	"current_max_hp": undefined // Used in damages calculation
 }
 var current_game_is_boss = false; // State if we're entering / in a boss battle or not
 
@@ -389,6 +390,8 @@ var INJECT_report_boss_damage = function() {
 				}
 			});
 			gui.progressbar.SetValue((results.response.boss_status.boss_max_hp - results.response.boss_status.boss_hp) / results.response.boss_status.boss_max_hp);
+			if (boss_options.current_max_hp === undefined)
+				boss_options.current_max_hp = results.response.boss_status.boss_max_hp;
 		}
 	}
 	function error(results, eresult) {
@@ -403,6 +406,7 @@ var INJECT_report_boss_damage = function() {
 		boss_options.report_interval = undefined;
 		boss_options.last_heal = undefined;
 		boss_options.last_report = undefined;
+		boss_options.current_max_hp = undefined;
 		current_game_is_boss = false;
 		INJECT_leave_round();
 		
@@ -412,7 +416,7 @@ var INJECT_report_boss_damage = function() {
 			SwitchNextZone();
 	}
 
-	var damageDone = Math.floor(Math.random() * 40);
+	var damageDone = (boss_options.current_max_hp === undefined) ? Math.floor(Math.random() * 20) : Math.floor(Math.random() * (boss_options.current_max_hp / 9000000));
 	var damageTaken = 0;
 	var now = (new Date().getTime()) / 1000;
 	if (boss_options.last_heal === undefined)
