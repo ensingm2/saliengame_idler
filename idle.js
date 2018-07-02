@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name		Ensingm2 Salien Game Idler
+// @name		Ensingm2 SGI
 // @namespace	https://github.com/ensingm2/saliengame_idler
-// @version		0.0.1
-// @author		ensingm2
+// @version		0.0.18
+// @author		ensingm2, JeanPaulLucien
 // @match		*://steamcommunity.com/saliengame/play
 // @match		*://steamcommunity.com/saliengame/play/
 // @grant		none
@@ -61,7 +61,7 @@ class BotGUI {
 			return false;
 		}
 		var $statusWindow = $J([
-			'<style>#salienbot_gui {background: #222; padding: 10px 5px 10px 15px; font-size: .85em; width: 250px; position: absolute;} p#sab_status{margin-top: -.8em; font-size: .8em;} #salienbot_gui p{margin_top: .2em}</style><div id="salienbot_gui">',
+			'<style>#salienbot_gui {padding: 5px 5px 10px 15px; font-size: .85em; width: 250px; position: absolute; height: 2em; overflow-y: hidden;transition: 1s;} div#salienbot_gui:hover {height: auto; background: #222;} p#sab_status{margin-top: -.8em; font-size: .8em;} #salienbot_gui p{margin_top: .2em}</style><div id="salienbot_gui">',
 				'<h2><a href="https://github.com/ensingm2/saliengame_idler">Salien Game Idler</a></h2>',
 				'<p id="sab_status"></p>', // Running or stopped
 				'<p><b>Task: </b><span id="sab_task">Initializing</span></p>', // Current task
