@@ -60,7 +60,8 @@ class BotGUI {
 		}
 
 		var $statusWindow = $J([
-			'<div id="salienbot_gui" style="background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; margin: 15px; width: 300px; transform: translate(0, 0);">',
+			'<div id="salienbot_gui" style="overflow: hidden; background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; margin: 15px; width: 300px; transform: translate(0, 0);">',
+				'<div id="gui_minimize_toggle" style="top: 5px; right: 5px; position: absolute; font-size: .75em">Collapse [-]</div>',
 				'<h1><a href="https://github.com/ensingm2/saliengame_idler/">Salien Game Idler</a></h1>',
 				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
 				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
@@ -186,6 +187,19 @@ function initGUI(){
 		});
 		$J('#planetSwitchCheckbox').prop('checked', auto_switch_planet.active);
 		
+		// Add an onclick to toggle the height of the div (effectively a minimize)
+		$J("#gui_minimize_toggle").click(function() {
+			var current_height = $J("#salienbot_gui").height();
+			if(current_height != 30) {
+				$J("#gui_minimize_toggle").text("Expand [+]");
+				$J("#salienbot_gui").height(30);
+			}
+			else {
+				$J("#gui_minimize_toggle").text("Collapse [-]");
+				$J("#salienbot_gui").height("auto");
+			}
+
+		});
 
 		// Run the global initializer, which will call the function for whichever screen you're in
 		INJECT_init();
