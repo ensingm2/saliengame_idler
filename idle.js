@@ -61,7 +61,7 @@ class BotGUI {
 			return false;
 		}
 		var $statusWindow = $J([
-			'<style>#salienbot_gui {background: #222; padding: 10px 5px 10px 15px; width: 300px; z-index: 405; position: fixed; top: 0; left: 0;} p#sab_status{margin-top: -.8em; font-size: .8em;} #salienbot_gui p{margin_top: .4em}</style><div id="salienbot_gui">',
+			'<style>#salienbot_gui {background: #222; padding: 10px 5px 10px 15px; width: 300px; z-index: 405; position: fixed; top: 0; left: 0;} p#sab_status{margin-top: -.8em; font-size: .8em;} #salienbot_gui p{margin_top: .2em}</style><div id="salienbot_gui">',
 				'<h2><a href="https://github.com/ensingm2/saliengame_idler">Salien Game Idler</a></h2>',
 				'<p id="sab_status"></p>', // Running or stopped
 				'<p><b>Task: </b><span id="sab_task">Initializing</span></p>', // Current task
@@ -69,8 +69,8 @@ class BotGUI {
 				`<p style="display:none" id="sab_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="sab_zone_difficulty"></span> <span id="sab_zone_score"></span></p>`, // why? It's not visible
 				'<p><b>Level: </b><span id="sab_level">'+ this.state.level +'</span><b>    EXP: </b><span id="sab_exp">'+ this.state.exp +" / "+ this.state.next_level_exp +'</span></p>',
 				'<p><b>Lvl Up In: </b><span id="sab_lvlup"></span></p>',
-				'<input id="planetSwitchCheckbox" type="checkbox">Automatic Planet Switching',
-				'<input id="animationsCheckbox" type="checkbox">Hide Game (Improves Performance)',
+				'<p><input id="planetSwitchCheckbox" type="checkbox">Automatic Planet Switching</p>',
+				'<p><input id="animationsCheckbox" type="checkbox">Hide Game (Improves Performance)</p>',
 			'</div>'
 		].join(''))
 
