@@ -61,7 +61,7 @@ class BotGUI {
 			return false;
 		}
 		var $statusWindow = $J([
-			'<style>#salienbot_gui {background: #222; padding: 10px 5px 10px 15px; width: 300px; z-index: 405; position: fixed; top: 0; left: 0;} p#sab_status{margin-top: -.8em; font-size: .8em;} #salienbot_gui p{margin_top: .2em}</style><div id="salienbot_gui">',
+			'<style>#salienbot_gui {background: #222; padding: 10px 5px 10px 15px; font-size: .85em; width: 250px; position: absolute;} p#sab_status{margin-top: -.8em; font-size: .8em;} #salienbot_gui p{margin_top: .2em}</style><div id="salienbot_gui">',
 				'<h2><a href="https://github.com/ensingm2/saliengame_idler">Salien Game Idler</a></h2>',
 				'<p id="sab_status"></p>', // Running or stopped
 				'<p><b>Task: </b><span id="sab_task">Initializing</span></p>', // Current task
