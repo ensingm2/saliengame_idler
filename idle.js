@@ -54,22 +54,23 @@ class BotGUI {
 		this.createProgressBar();
 	}
 
-	createStatusWindow() {
-		if(document.getElementById('salienbot_gui')) {
+	createStatusWindow() 
+	{
+		if(document.getElementById('salienbot_gui')) 
+		{
 			return false;
 		}
-
 		var $statusWindow = $J([
-			'<div id="salienbot_gui" style="background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; margin: 15px; width: 300px; transform: translate(0, 0);">',
-				'<h1><a href="https://github.com/ensingm2/saliengame_idler/">Salien Game Idler</a></h1>',
-				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
-				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
-				`<p><b>Target Zone:</b> <span id="salienbot_zone">None</span></p>`,
-				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span> <span id="salienbot_zone_score"></span></p>`,
-				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + " / " + this.state.next_level_exp + '</span></p>',
-				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
-				'<p><input id="planetSwitchCheckbox" type="checkbox"/> Automatic Planet Switching</p>',
-				'<p><input id="animationsCheckbox" type="checkbox"/> Hide Game (Improves Performance)</p>',
+			'<style>#salienbot_gui {background: #222; padding: 10px 5px 10px 15px; width: 300px; z-index: 405; position: fixed; top: 0; left: 0;} p#sab_status{margin-top: -.8em; font-size: .8em;} #salienbot_gui p{margin_top: .4em}</style><div id="salienbot_gui">',
+				'<h2><a href="https://github.com/ensingm2/saliengame_idler">Salien Game Idler</a></h2>',
+				'<p id="sab_status"></p>', // Running or stopped
+				'<p><b>Task: </b><span id="sab_task">Initializing</span></p>', // Current task
+				`<p><b>Target Zone: </b><span id="sab_zone">None</span></p>`,
+				`<p style="display:none" id="sab_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="sab_zone_difficulty"></span> <span id="sab_zone_score"></span></p>`, // why? It's not visible
+				'<p><b>Level: </b><span id="sab_level">'+ this.state.level +'</span><b>    EXP: </b><span id="sab_exp">'+ this.state.exp +" / "+ this.state.next_level_exp +'</span></p>',
+				'<p><b>Lvl Up In: </b><span id="sab_lvlup"></span></p>',
+				'<input id="planetSwitchCheckbox" type="checkbox">Automatic Planet Switching',
+				'<input id="animationsCheckbox" type="checkbox">Hide Game (Improves Performance)',
 			'</div>'
 		].join(''))
 
@@ -85,17 +86,17 @@ class BotGUI {
 	updateStatus(running) {
 		const statusTxt = running ? '<span style="color: green;">✓ Running</span>' : '<span style="color: red;">✗ Stopped</span>';
 
-		$J('#salienbot_status').html(statusTxt);
+		$J('#sab_status').html(statusTxt);
 	}
 
 	updateTask(status, log_to_console) {
 		if(log_to_console || log_to_console === undefined)
 			console.log(status);
-		document.getElementById('salienbot_task').innerText = status;
+		document.getElementById('sab_task').innerText = status;
 	}
 
 	updateExp(exp) {
-		document.getElementById('salienbot_exp').innerText = exp;
+		document.getElementById('sab_exp').innerText = exp;
 	}
 
 	updateLevel(level) {
