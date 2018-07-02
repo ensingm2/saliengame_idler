@@ -661,6 +661,12 @@ function GetBestZone() {
 
 	if(bestZone !== undefined) {
 		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
+	} else {
+		// Since the zone 0 on planet 38 issue we don't join a zone with capture progress = 0
+		// Joining a random zone instead to avoid a 5 min. break when switching to a fresh new planet
+		var randomZone = Math.floor(Math.random() * 96);
+		bestZone = [randomZone, window.gGame.m_State.m_Grid.m_Tiles[randomZone].Info.boss];
+		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Random zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
 	}
 
 	return bestZone;
