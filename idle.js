@@ -100,12 +100,12 @@ class BotGUI {
 	}
 
 	updateLevel(level) {
-		document.getElementById('salienbot_level').innerText = level;
+		document.getElementById('sab_level').innerText = level;
 	}
 
 	updateEstimatedTime(secondsLeft) {
 		if (secondsLeft == -1) {
-			document.getElementById('salienbot_esttimlvl').innerText = "Max level reached";
+			document.getElementById('sab_lvlup').innerText = "Max level reached";
 			return;
 		}
 		let date = new Date(null);
@@ -127,7 +127,7 @@ class BotGUI {
 
 		timeTxt += seconds + "s";
 
-		document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
+		document.getElementById('sab_lvlup').innerText = timeTxt;
 	}
 
 	updateZone(zone, progress, difficulty, is_boss_battle) {
@@ -135,27 +135,27 @@ class BotGUI {
 		if(is_boss_battle === undefined)
 			is_boss_battle = false;
 		if(progress === undefined && !is_boss_battle) {
-			$J("#salienbot_zone_difficulty_div").hide();
+			$J("#sab_zone_difficulty_div").hide();
 			difficulty = "";
 		}
 		else {
-			$J("#salienbot_zone_difficulty_div").show();
+			$J("#sab_zone_difficulty_div").show();
 			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar);
 
 			if(is_boss_battle) {
-				$J("#salienbot_zone_score").hide();
-				document.getElementById('salienbot_zone_difficulty').innerText = "[BOSS]";
+				$J("#sab_zone_score").hide();
+				document.getElementById('sab_zone_difficulty').innerText = "[BOSS]";
 			}
 			else {
-				$J("#salienbot_zone_score").show();
-				document.getElementById('salienbot_zone_score').innerText = "(" + get_max_score(zone) + "xp/round)";
+				$J("#sab_zone_score").show();
+				document.getElementById('sab_zone_score').innerText = "(" + get_max_score(zone) + "xp/round)";
 
-				document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
+				document.getElementById('sab_zone_difficulty').innerText = difficulty;
 				printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
 			}
 		}
 
-		document.getElementById('salienbot_zone').innerText = printString;
+		document.getElementById('sab_zone').innerText = printString;
 	}
 };
 
@@ -635,7 +635,7 @@ function get_max_score(zone, round_duration) {
 // Get the best zone available
 function GetBestZone() {
 	var bestZone;
-	var highestDifficulty = -1;
+	var highestDifficulty = maxProgress = -1;
 
 	gui.updateTask('Getting best zone');
 
@@ -643,27 +643,22 @@ function GetBestZone() {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
 		if (!zone.captured && zone.progress > 0) {
 			if (zone.boss) {
-				console.log("Zone " + idx + " with boss. Switching to it.");
+				//console.log("Zone " + idx + " with boss. Switching to it.");
 				return [idx, zone.boss];
 			}
-
-			if(zone.difficulty > highestDifficulty) {
+			
+			if(zone.difficulty > highestDifficulty && zone.progress > maxProgress) {
 				highestDifficulty = zone.difficulty;
 				maxProgress = zone.progress;
 				bestZone = [idx, zone.boss];
-			} else if(zone.difficulty < highestDifficulty) continue;
-
-			if(zone.progress < maxProgress) {
-				maxProgress = zone.progress;
-				bestZone = [idx, zone.boss];
-			}
+			} 
+			else continue;
 		}
 	}
 
 	if(bestZone !== undefined) {
-		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
+		//console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
 	}
-
 	return bestZone;
 }
 
