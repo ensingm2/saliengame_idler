@@ -322,7 +322,7 @@ var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle
 				// Update the GUI
 				gui.updateStatus(true);
 				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty, is_boss_battle);
-		
+				
 				if($J('#lvlupCheckbox').prop('checked'))
 				{
 					gui.updateEstimatedTime(calculateTimeToNextLevel());
@@ -424,7 +424,9 @@ var INJECT_wait_for_end = function() {
 	gui.updateTask("Waiting " + Math.max(time_remaining, 0) + "s for round to end", false);
 	gui.updateStatus(true);
 	if (target_zone != -1)
-		gui.updateEstimatedTime(calculateTimeToNextLevel());
+		if($J('#lvlupCheckbox').prop('checked')) {
+			gui.updateEstimatedTime(calculateTimeToNextLevel());
+		}
 	gui.progressbar.SetValue(time_passed_ms/(resend_frequency*1000));
 
 	// Wait
@@ -495,7 +497,9 @@ var INJECT_end_round = function(attempt_no) {
 				} else {
 					gui.updateExp(data.response.new_score + " / " + data.response.next_level_score);
 				}
-				gui.updateEstimatedTime(calculateTimeToNextLevel());
+				if($J('#lvlupCheckbox').prop('checked')) {
+					gui.updateEstimatedTime(calculateTimeToNextLevel());
+				}
 				gui.updateZone("None");
 
 				// Restart the round if we have that variable set
