@@ -68,7 +68,7 @@ class BotGUI {
 				`<p><b>Target Zone: </b><span id="sab_zone">None</span></p>`,
 				`<p style="display:none" id="sab_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="sab_zone_difficulty"></span> <span id="sab_zone_score"></span></p>`, // why? It's not visible
 				'<p><b>Level: </b><span id="sab_level">'+ this.state.level +'</span><b>    EXP: </b><span id="sab_exp">'+ this.state.exp +" / "+ this.state.next_level_exp +'</span></p>',
-				'<p><b>Lvl Up In: </b><span id="sab_lvlup"></span></p>',
+				'<p><b>Lvl Up In: </b><input id="lvlupCheckbox" type="checkbox"><span id="sab_lvlup"></span></p>',
 				'<p><input id="planetSwitchCheckbox" type="checkbox">Automatic Planet Switching</p>',
 				'<p><input id="animationsCheckbox" type="checkbox">Hide Game (Improves Performance)</p>',
 			'</div>'
@@ -322,7 +322,11 @@ var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle
 				// Update the GUI
 				gui.updateStatus(true);
 				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty, is_boss_battle);
-				gui.updateEstimatedTime(calculateTimeToNextLevel());
+		
+				if($J('#lvlupCheckbox').prop('checked'))
+				{
+					gui.updateEstimatedTime(calculateTimeToNextLevel());
+				}
 		
 				current_game_id = data.response.zone_info.gameid;
 				current_game_start = new Date().getTime();
