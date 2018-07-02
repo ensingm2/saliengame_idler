@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Ensingm2 Salien Game Idler
 // @namespace	https://github.com/ensingm2/saliengame_idler
-// @version		0.0.1
+// @version		0.0.18
 // @author		ensingm2
 // @match		*://steamcommunity.com/saliengame/play
 // @match		*://steamcommunity.com/saliengame/play/
@@ -54,22 +54,23 @@ class BotGUI {
 		this.createProgressBar();
 	}
 
-	createStatusWindow() {
-		if(document.getElementById('salienbot_gui')) {
+	createStatusWindow() 
+	{
+		if(document.getElementById('salienbot_gui')) 
+		{
 			return false;
 		}
-
 		var $statusWindow = $J([
-			'<div id="salienbot_gui" style="background: #191919; z-index: 1; border: 3px solid #83d674; padding: 20px; margin: 15px; width: 300px; transform: translate(0, 0);">',
-				'<h1><a href="https://github.com/ensingm2/saliengame_idler/">Salien Game Idler</a></h1>',
-				'<p style="margin-top: -.8em; font-size: .75em"><span id="salienbot_status"></span></p>', // Running or stopped
-				'<p><b>Task:</b> <span id="salienbot_task">Initializing</span></p>', // Current task
-				`<p><b>Target Zone:</b> <span id="salienbot_zone">None</span></p>`,
-				`<p style="display: none;" id="salienbot_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="salienbot_zone_difficulty"></span> <span id="salienbot_zone_score"></span></p>`,
-				'<p><b>Level:</b> <span id="salienbot_level">' + this.state.level + '</span> &nbsp;&nbsp;&nbsp;&nbsp; <b>EXP:</b> <span id="salienbot_exp">' + this.state.exp + " / " + this.state.next_level_exp + '</span></p>',
-				'<p><b>Lvl Up In:</b> <span id="salienbot_esttimlvl"></span></p>',
-				'<p><input id="planetSwitchCheckbox" type="checkbox"/> Automatic Planet Switching</p>',
-				'<p><input id="animationsCheckbox" type="checkbox"/> Hide Game (Improves Performance)</p>',
+			'<style>#salienbot_gui {padding: 5px 5px 10px 15px; font-size: .85em; width: 250px; position: absolute; height: 2em; overflow-y: hidden;transition: 1s;} div#salienbot_gui:hover {height: auto; background: #222;} p#sab_status{margin-top: -.8em; font-size: .8em;} #salienbot_gui p{margin_top: .2em}</style><div id="salienbot_gui">',
+				'<h2><a href="https://github.com/ensingm2/saliengame_idler">Salien Game Idler</a></h2>',
+				'<p id="sab_status"></p>', // Running or stopped
+				'<p><b>Task: </b><span id="sab_task">Initializing</span></p>', // Current task
+				`<p><b>Target Zone: </b><span id="sab_zone">None</span></p>`,
+				`<p style="display:none" id="sab_zone_difficulty_div"><b>Zone Difficulty:</b> <span id="sab_zone_difficulty"></span> <span id="sab_zone_score"></span></p>`, // why? It's not visible
+				'<p><b>Level: </b><span id="sab_level">'+ this.state.level +'</span><b>    EXP: </b><span id="sab_exp">'+ this.state.exp +" / "+ this.state.next_level_exp +'</span></p>',
+				'<p><b>Lvl Up In: </b><input id="lvlupCheckbox" type="checkbox"><span id="sab_lvlup"></span></p>',
+				'<p><input id="planetSwitchCheckbox" type="checkbox">Automatic Planet Switching</p>',
+				'<p><input id="animationsCheckbox" type="checkbox">Hide Game (Improves Performance)</p>',
 			'</div>'
 		].join(''))
 
@@ -85,26 +86,26 @@ class BotGUI {
 	updateStatus(running) {
 		const statusTxt = running ? '<span style="color: green;">✓ Running</span>' : '<span style="color: red;">✗ Stopped</span>';
 
-		$J('#salienbot_status').html(statusTxt);
+		$J('#sab_status').html(statusTxt);
 	}
 
 	updateTask(status, log_to_console) {
 		if(log_to_console || log_to_console === undefined)
 			console.log(status);
-		document.getElementById('salienbot_task').innerText = status;
+		document.getElementById('sab_task').innerText = status;
 	}
 
 	updateExp(exp) {
-		document.getElementById('salienbot_exp').innerText = exp;
+		document.getElementById('sab_exp').innerText = exp;
 	}
 
 	updateLevel(level) {
-		document.getElementById('salienbot_level').innerText = level;
+		document.getElementById('sab_level').innerText = level;
 	}
 
 	updateEstimatedTime(secondsLeft) {
 		if (secondsLeft == -1) {
-			document.getElementById('salienbot_esttimlvl').innerText = "Max level reached";
+			document.getElementById('sab_lvlup').innerText = "Max level reached";
 			return;
 		}
 		let date = new Date(null);
@@ -126,7 +127,7 @@ class BotGUI {
 
 		timeTxt += seconds + "s";
 
-		document.getElementById('salienbot_esttimlvl').innerText = timeTxt;
+		document.getElementById('sab_lvlup').innerText = timeTxt;
 	}
 
 	updateZone(zone, progress, difficulty, is_boss_battle) {
@@ -134,27 +135,27 @@ class BotGUI {
 		if(is_boss_battle === undefined)
 			is_boss_battle = false;
 		if(progress === undefined && !is_boss_battle) {
-			$J("#salienbot_zone_difficulty_div").hide();
+			$J("#sab_zone_difficulty_div").hide();
 			difficulty = "";
 		}
 		else {
-			$J("#salienbot_zone_difficulty_div").show();
+			$J("#sab_zone_difficulty_div").show();
 			gGame.m_State.m_Grid.m_Tiles[target_zone].addChild(this.progressbar);
 
 			if(is_boss_battle) {
-				$J("#salienbot_zone_score").hide();
-				document.getElementById('salienbot_zone_difficulty').innerText = "[BOSS]";
+				$J("#sab_zone_score").hide();
+				document.getElementById('sab_zone_difficulty').innerText = "[BOSS]";
 			}
 			else {
-				$J("#salienbot_zone_score").show();
-				document.getElementById('salienbot_zone_score').innerText = "(" + get_max_score(zone) + "xp/round)";
+				$J("#sab_zone_score").show();
+				document.getElementById('sab_zone_score').innerText = "(" + get_max_score(zone) + "xp/round)";
 
-				document.getElementById('salienbot_zone_difficulty').innerText = difficulty;
+				document.getElementById('sab_zone_difficulty').innerText = difficulty;
 				printString += " (" + (progress * 100).toFixed(2) + "% Complete)"
 			}
 		}
 
-		document.getElementById('salienbot_zone').innerText = printString;
+		document.getElementById('sab_zone').innerText = printString;
 	}
 };
 
@@ -321,7 +322,11 @@ var INJECT_start_round = function(zone, access_token, attempt_no, is_boss_battle
 				// Update the GUI
 				gui.updateStatus(true);
 				gui.updateZone(zone, data.response.zone_info.capture_progress, data.response.zone_info.difficulty, is_boss_battle);
-				gui.updateEstimatedTime(calculateTimeToNextLevel());
+				
+				if($J('#lvlupCheckbox').prop('checked'))
+				{
+					gui.updateEstimatedTime(calculateTimeToNextLevel());
+				}
 		
 				current_game_id = data.response.zone_info.gameid;
 				current_game_start = new Date().getTime();
@@ -419,7 +424,9 @@ var INJECT_wait_for_end = function() {
 	gui.updateTask("Waiting " + Math.max(time_remaining, 0) + "s for round to end", false);
 	gui.updateStatus(true);
 	if (target_zone != -1)
-		gui.updateEstimatedTime(calculateTimeToNextLevel());
+		if($J('#lvlupCheckbox').prop('checked')) {
+			gui.updateEstimatedTime(calculateTimeToNextLevel());
+		}
 	gui.progressbar.SetValue(time_passed_ms/(resend_frequency*1000));
 
 	// Wait
@@ -490,7 +497,9 @@ var INJECT_end_round = function(attempt_no) {
 				} else {
 					gui.updateExp(data.response.new_score + " / " + data.response.next_level_score);
 				}
-				gui.updateEstimatedTime(calculateTimeToNextLevel());
+				if($J('#lvlupCheckbox').prop('checked')) {
+					gui.updateEstimatedTime(calculateTimeToNextLevel());
+				}
 				gui.updateZone("None");
 
 				// Restart the round if we have that variable set
@@ -633,8 +642,7 @@ function get_max_score(zone, round_duration) {
 
 // Get the best zone available
 function GetBestZone() {
-	var bestZone;
-	var highestDifficulty = -1;
+	var bestZone, highestDifficulty = maxProgress = -1;
 
 	gui.updateTask('Getting best zone');
 
@@ -642,33 +650,22 @@ function GetBestZone() {
 		var zone = window.gGame.m_State.m_Grid.m_Tiles[idx].Info;
 		if (!zone.captured && zone.progress > 0) {
 			if (zone.boss) {
-				console.log("Zone " + idx + " with boss. Switching to it.");
+				//console.log("Zone " + idx + " with boss. Switching to it.");
 				return [idx, zone.boss];
 			}
-
-			if(zone.difficulty > highestDifficulty) {
+			
+			if(zone.difficulty >= highestDifficulty && zone.progress > maxProgress) {
 				highestDifficulty = zone.difficulty;
 				maxProgress = zone.progress;
 				bestZone = [idx, zone.boss];
-			} else if(zone.difficulty < highestDifficulty) continue;
-
-			if(zone.progress < maxProgress) {
-				maxProgress = zone.progress;
-				bestZone = [idx, zone.boss];
-			}
+			} 
+			else continue;
 		}
 	}
 
 	if(bestZone !== undefined) {
-		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
-	} else {
-		// Since the zone 0 on planet 38 issue we don't join a zone with capture progress = 0
-		// Joining a random zone instead to avoid a 5 min. break when switching to a fresh new planet
-		var randomZone = Math.floor(Math.random() * 96);
-		bestZone = [randomZone, window.gGame.m_State.m_Grid.m_Tiles[randomZone].Info.boss];
-		console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Random zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
+		//console.log(`${window.gGame.m_State.m_PlanetData.state.name} - Zone ${bestZone[0]} Progress: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.progress} Difficulty: ${window.gGame.m_State.m_Grid.m_Tiles[bestZone[0]].Info.difficulty}`);
 	}
-
 	return bestZone;
 }
 
@@ -821,6 +818,16 @@ function CheckSwitchBetterPlanet(difficulty_call) {
 	} else {
 		console.log("There's no planet better than the current one.");
 	}
+	// Hide the game again
+	/*$J('#animationsCheckbox').change(function() {		
+		});
+		$J('#animationsCheckbox').prop('checked', !animations_enabled);
+
+	*/
+	if($J('#animationsCheckbox').prop('checked'))
+	{
+		INJECT_toggle_animations(!this.checked);
+	}		
 }
 
 var INJECT_switch_planet = function(planet_id, callback) {
