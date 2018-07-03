@@ -411,8 +411,8 @@ var INJECT_report_boss_damage = function() {
 		boss_options.last_report = undefined;
 		boss_options.current_max_hp = undefined;
 		current_game_is_boss = false;
+		bossXP = 0;
 		INJECT_leave_round();
-		bossXP = 0
 		
 		if (auto_switch_planet.active == true)
 			CheckSwitchBetterPlanet();
