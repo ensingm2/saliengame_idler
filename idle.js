@@ -375,7 +375,8 @@ var INJECT_report_boss_damage = function() {
 			gui.updateTask("Waiting for players...");
 		} else {
 			results.response.boss_status.boss_players.forEach( function(player) {
-				bossXP = player.xp_earned
+				bossXP = player.xp_earned;
+				gui.updateEstimatedTime(calculateTimeToNextLevel());
 				if (player.accountid == account_id) {
 					if (player.time_last_heal !== undefined)
 						boss_options.last_heal = player.time_last_heal;
