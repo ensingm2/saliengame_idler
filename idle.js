@@ -1085,10 +1085,8 @@ var INJECT_init = function() {
 	
 	if (gGame.m_State instanceof CBattleSelectionState)
 		INJECT_init_battle_selection();
-	else if (gGame.m_State instanceof CPlanetSelectionState) {
+	else if (gGame.m_State instanceof CPlanetSelectionState)
 		INJECT_init_planet_selection();
-		CheckSwitchBetterPlanet();
-	}
 };
 
 var INJECT_toggle_animations = function(enabled) {
