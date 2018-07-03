@@ -43,6 +43,7 @@ var boss_options = {
 	"last_report": undefined, // Used in the check of the game script state and unlock it if needed 
 	"current_max_hp": undefined // Used in damages calculation
 }
+var bossXP = 0
 var current_game_is_boss = false; // State if we're entering / in a boss battle or not
 
 class BotGUI {
@@ -212,7 +213,7 @@ function calculateTimeToNextLevel() {
 		return -1;
 	
 	const nextScoreAmount = get_max_score(target_zone);	
-	const missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score) / nextScoreAmount) * nextScoreAmount;
+	const missingExp = Math.ceil((gPlayerInfo.next_level_score - gPlayerInfo.score - bossXP) / nextScoreAmount) * nextScoreAmount;
 	const roundTime = resend_frequency + update_length;
 
 	const secondsLeft = missingExp / nextScoreAmount * roundTime - time_passed_ms / 1000;
@@ -374,6 +375,7 @@ var INJECT_report_boss_damage = function() {
 			gui.updateTask("Waiting for players...");
 		} else {
 			results.response.boss_status.boss_players.forEach( function(player) {
+				bossXP = player.xp_earned;
 				if (player.accountid == account_id) {
 					if (player.time_last_heal !== undefined)
 						boss_options.last_heal = player.time_last_heal;
@@ -398,6 +400,7 @@ var INJECT_report_boss_damage = function() {
 					gui.updateEstimatedTime(calculateTimeToNextLevel());
 				}
 			});
+			gui.updateEstimatedTime(calculateTimeToNextLevel());
 			gui.progressbar.SetValue((results.response.boss_status.boss_max_hp - results.response.boss_status.boss_hp) / results.response.boss_status.boss_max_hp);
 			if (boss_options.current_max_hp === undefined)
 				boss_options.current_max_hp = results.response.boss_status.boss_max_hp;
@@ -417,6 +420,7 @@ var INJECT_report_boss_damage = function() {
 		boss_options.last_report = undefined;
 		boss_options.current_max_hp = undefined;
 		current_game_is_boss = false;
+		bossXP = 0;
 		INJECT_leave_round();
 		
 		if (auto_switch_planet.active == true)
