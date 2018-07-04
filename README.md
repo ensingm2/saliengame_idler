@@ -2,6 +2,9 @@
 
 [Link to Saliens Game](https://steamcommunity.com/saliengame/play)
 
+## FINAL UPDATE
+Thanks for the support, contributions, and comments everyone! Hopefully we helped at least a few of you hit level 25, and potentially get some games in the giveaways, if that was your goal (I actually managed to get one myself, surprisingly). Now, go have fun with any of the _actual_ games you got during the sale! This repository will be archived in the near future, and become read-only.
+
 ### Intro
 Hey everyone, Like all of you, I was interested in "streamlining" the process of the 2018 Steam sale 'Salien' minigame. You may or may not remember me as a contributor/dev in the Steam Monster Minigame autoclicking scene from the 2015 Steam sale. I took a look at this year's game, and noticed it's much more... boring. No interactions between other players mean there are only a few interactions with the server, and they can be easily spoofed, as long as you wait out the timer of the round, and only send the maximum allowed score for a zone. So I figured, why automate the game at all? Much easier to just sit at the menu and just say we beat the level.
 
@@ -30,7 +33,7 @@ Hey everyone, Like all of you, I was interested in "streamlining" the process of
 Note: The script may also be set up on userscript managers such as Tampermonkey, however we advise against enabling automatic updates for _*any*_ scripts, for your own security, and have disabled automatic updates by default.
 
 ### TO DO
-* Any fix and other cool features, with support from viewers like you!
+* Nothing left. Game over man, game over!
 
 ### Want to Contribute?
-Feel free. You can submit whatever changes you'd like. Fork, PR, whatever. Go nuts.
+This repository has been archived, as the game is no longer running. Thank you for your support!
